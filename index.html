@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Residential Property Tax Breakdown</title>
+  <title>Arcadia Residential Property Tax Breakdown</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0d6efd" />
-  <!-- Open Graph for rich previews when you share this link on Facebook -->
-  <meta property="og:title" content="Residential Property Tax Breakdown" />
-  <meta property="og:description" content="See how your tax bill is allocated across 12 budget categories by Ward (CAD)." />
-  <!-- Optional: host a 1200x630 image and paste its URL below -->
-  <!-- <meta property="og:image" content="https://yourdomain.com/og-image.jpg" /> -->
+  <link rel="icon" href="logo.svg" type="image/svg+xml" />
+  <!-- Open Graph for richer Facebook previews -->
+  <meta property="og:title" content="Arcadia Residential Property Tax Breakdown" />
+  <meta property="og:description" content="Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny." />
+  <!-- Optional: if you have a 1200x630 preview image, add: -->
+  <!-- <meta property="og:image" content="https://your-domain.example/og-image.jpg" /> -->
 
   <style>
     :root{
@@ -60,13 +61,39 @@
     .muted{ color:var(--muted); font-size:13px; }
     .footer{ color:var(--muted); margin-top:18px; font-size:13px; }
     .hidden{ display:none !important; }
+
+    /* --- Brand header with logo --- */
+    header.brand { display:flex; align-items:center; gap:12px; }
+    .brand-logo { display:inline-flex; align-items:center; }
+    .brand-logo img.logo {
+      display:block;
+      width:48px; height:48px;      /* prevents layout shift */
+      object-fit:contain;           /* keeps aspect ratio */
+    }
+    @media (max-width:480px){
+      .brand-logo img.logo { width:40px; height:40px; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <h1>Residential Property Tax Breakdown</h1>
-      <p class="lead">Pick your Ward, enter your annual bill (CAD), and see the allocation across 12 budget categories. The totals match your bill to the penny.</p>
+    <header class="brand">
+      <div class="brand-logo">
+        <img
+          class="logo"
+          src="./logo.svg"
+          alt="Arcadia"
+          width="48" height="48"
+          decoding="async"
+          fetchpriority="high"
+          onerror="this.style.display='none'"/>
+      </div>
+      <div>
+        <h1>Arcadia Residential Property Tax Breakdown</h1>
+        <p class="lead">
+          Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny.
+        </p>
+      </div>
     </header>
 
     <section class="card" aria-label="Inputs">
@@ -74,12 +101,12 @@
         <div>
           <label for="ward">Ward</label>
           <select id="ward" name="ward" autocomplete="off">
-            <option>Ward 1</option>
-            <option>Ward 2</option>
-            <option>Ward 3</option>
-            <option>Ward 4</option>
-            <option>Ward 5</option>
-            <option>Ward 6</option>
+            <option>Upper Gagetown (Ward 1)</option>
+            <option>Gagetown (Ward 2)</option>
+            <option>Hampstead (Ward 3)</option>
+            <option>Cambridge (Ward 4)</option>
+            <option>Cambridge Narrows (Ward 5)</option>
+            <option>Waterborough (Ward 6)</option>
           </select>
         </div>
         <div>
@@ -140,36 +167,46 @@
     // ---------- Configuration ----------
     // Replace these with your official splits. Integers or decimals are fine; app normalizes to 100%.
     const WARD_DATA = {
-      "Ward 1": {
+      "Upper Gagetown (Ward 1)": {
         "Education": 20, "Public Safety": 15, "Infrastructure": 10, "Health": 5,
         "Parks": 5, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
         "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
       },
-      "Ward 2": {
+      "Gagetown (Ward 2)": {
         "Education": 18, "Public Safety": 17, "Infrastructure": 9, "Health": 6,
         "Parks": 6, "Transportation": 12, "Fire Services": 8, "Social Services": 6,
         "Administration": 5, "Debt Services": 10, "Environmental": 1.5, "Emergency": 1.5
       },
-      "Ward 3": {
+      "Hampstead (Ward 3)": {
         "Education": 22, "Public Safety": 13, "Infrastructure": 11, "Health": 4,
         "Parks": 4, "Transportation": 9, "Fire Services": 11, "Social Services": 4,
         "Administration": 6, "Debt Services": 10, "Environmental": 3, "Emergency": 3
       },
-      "Ward 4": {
+      "Cambridge (Ward 4)": {
         "Education": 19, "Public Safety": 16, "Infrastructure": 10, "Health": 5,
         "Parks": 5, "Transportation": 11, "Fire Services": 9, "Social Services": 5,
         "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
       },
-      "Ward 5": {
+      "Cambridge Narrows (Ward 5)": {
         "Education": 21, "Public Safety": 14, "Infrastructure": 10, "Health": 5,
         "Parks": 6, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
         "Administration": 5, "Debt Services": 10, "Environmental": 2, "Emergency": 2
       },
-      "Ward 6": {
+      "Waterborough (Ward 6)": {
         "Education": 20, "Public Safety": 15, "Infrastructure": 10, "Health": 5,
         "Parks": 5, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
         "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
       }
+    };
+
+    // Back-compat: map old names to new labels (so links like ?ward=Ward%201 still work)
+    const LEGACY_WARD_ALIASES = {
+      "Ward 1": "Upper Gagetown (Ward 1)",
+      "Ward 2": "Gagetown (Ward 2)",
+      "Ward 3": "Hampstead (Ward 3)",
+      "Ward 4": "Cambridge (Ward 4)",
+      "Ward 5": "Cambridge Narrows (Ward 5)",
+      "Ward 6": "Waterborough (Ward 6)"
     };
 
     const LOCALE = 'en-CA';
@@ -183,9 +220,9 @@
 
     const parseAmount = (s) => {
       if (typeof s !== 'string') return 0;
-      s = s.trim().replace(/[^\d.,-]/g,'');
-      if (s.includes(',') && s.includes('.')) s = s.replace(/,/g,'');
-      else if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
+      s = s.trim().replace(/[^\d.,-]/g,'');            // strip $ and spaces
+      if (s.includes(',') && s.includes('.')) s = s.replace(/,/g,'');   // 1,234.56
+      else if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.'); // 1234,56
       const num = Number(s);
       return isFinite(num) ? Math.max(0, Math.round(num * 100)) : 0;
     };
@@ -218,8 +255,7 @@
       const url = new URL(window.location.href);
       url.searchParams.set('ward', ward);
       url.searchParams.set('amount', (amountCents/100).toString());
-      // remove any legacy params
-      url.searchParams.delete('currency');
+      url.searchParams.delete('currency'); // legacy cleanup
       return url.toString();
     }
 
@@ -368,7 +404,7 @@
       out.classList.remove('hidden');
       showMsg("", false, true);
 
-      // Persist last selections (no currency anymore)
+      // Persist last selections
       localStorage.setItem('tax:lastWard', ward);
       localStorage.setItem('tax:lastAmt', amountCents);
       history.replaceState(null, '', link);
@@ -396,9 +432,6 @@
       history.replaceState(null, '', url.toString());
     });
 
-    // Auto-calc on Enter key
-    amtInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); computeAndRender(); } });
-
     // Load from deep link or last selections
     (function init(){
       const url = new URL(window.location.href);
@@ -407,8 +440,18 @@
       const lastWard = localStorage.getItem('tax:lastWard');
       const lastAmt  = localStorage.getItem('tax:lastAmt');
 
-      if (qWard && WARD_DATA[qWard]) wardSel.value = qWard;
-      else if (lastWard && WARD_DATA[lastWard]) wardSel.value = lastWard;
+      function resolveWardName(name){
+        if (!name) return null;
+        if (WARD_DATA[name]) return name;
+        if (LEGACY_WARD_ALIASES[name]) return LEGACY_WARD_ALIASES[name];
+        return null;
+      }
+
+      const fromQuery = resolveWardName(qWard);
+      const fromStorage = resolveWardName(lastWard);
+
+      if (fromQuery) wardSel.value = fromQuery;
+      else if (fromStorage) wardSel.value = fromStorage;
 
       if (qAmt){
         amtInput.value = qAmt;
