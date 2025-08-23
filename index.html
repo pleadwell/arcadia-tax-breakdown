@@ -67,12 +67,19 @@
     .brand-logo { display:inline-flex; align-items:center; }
     .brand-logo img.logo {
       display:block;
-      width:48px; height:48px;      /* prevents layout shift */
-      object-fit:contain;           /* keeps aspect ratio */
+      width:48px; height:48px;
+      object-fit:contain;
     }
     @media (max-width:480px){
       .brand-logo img.logo { width:40px; height:40px; }
     }
+
+    /* Contact card styling */
+    .contact { margin-top:12px; display:grid; gap:8px; }
+    .contact .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+    .pill{ background:#f1f5f9; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:14px; }
+    .contact .label{ font-weight:700; color:#111827; }
+    .contact .address{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   </style>
 </head>
 <body>
@@ -135,6 +142,27 @@
         <button class="ghost" id="csvBtn">Download CSV</button>
         <button class="ghost" id="shareBtn">Share on Facebook</button>
         <a id="linkBtn" class="ghost" href="#" target="_blank" style="display:inline-block; text-decoration:none; padding:10px 14px; border-radius:10px; border:1px solid var(--border);">Open shareable link</a>
+        <button class="primary" id="emailBtn" title="Email your councillor & mayor">Email my councillor &amp; mayor</button>
+        <button class="ghost" id="copyEmailBtn" title="Copy email text for manual paste">Copy email text</button>
+        <button class="ghost" id="copyAddrsBtn" title="Copy email addresses">Copy email addresses</button>
+      </div>
+
+      <div class="contact">
+        <div class="row">
+          <span class="label">Councillor:</span>
+          <span id="cName" class="pill">—</span>
+          <span id="cEmail" class="pill address">—</span>
+        </div>
+        <div class="row">
+          <span class="label">Mayor:</span>
+          <span id="mName" class="pill">Clinton Sharpe</span>
+          <span id="mEmail" class="pill address">clinton.sharpe@arcadianb.ca</span>
+        </div>
+        <div class="row">
+          <span class="label">Queries CC list:</span>
+          <span id="ccList" class="pill address">info@arcadianb.ca, Karrie.Bedford@arcadianb.ca, Jessica.Mcgarity@arcadianb.ca</span>
+        </div>
+        <p class="muted">Tip: Clicking “Email my councillor & mayor” opens your email app with all details. If that doesn’t work on your device, use “Copy email text” and “Copy email addresses” instead.</p>
       </div>
 
       <table id="resultsTable" aria-describedby="sumTotal">
@@ -199,6 +227,20 @@
       }
     };
 
+    // Representatives per ward + mayor
+    const CONTACTS = {
+      "Upper Gagetown (Ward 1)": { name: "Tammy Gordon", email: "tammy.gordon@arcadianb.ca" },
+      "Gagetown (Ward 2)": { name: "Paul Mennier", email: "paul.mennier@arcadianb.ca" },
+      "Hampstead (Ward 3)": { name: "Harry Thomson", email: "harry.thomson@arcadianb.ca" },
+      "Cambridge (Ward 4)": { name: "Deputy Mayor Steven Sharpe", email: "steven.sharpe@arcadianb.ca" },
+      "Cambridge Narrows (Ward 5)": { name: "Sheila Black", email: "Sheila.black@arcadianb.ca" },
+      "Waterborough (Ward 6)": { name: "Paula Gahan-McGee", email: "Paula.gahan-magee@arcadianb.ca" }
+    };
+    const MAYOR = { name: "Clinton Sharpe", email: "clinton.sharpe@arcadianb.ca" };
+
+    // “Email to send all queries to” (CC)
+    const QUERY_CC = ["info@arcadianb.ca", "Karrie.Bedford@arcadianb.ca", "Jessica.Mcgarity@arcadianb.ca"];
+
     // Back-compat: map old names to new labels (so links like ?ward=Ward%201 still work)
     const LEGACY_WARD_ALIASES = {
       "Ward 1": "Upper Gagetown (Ward 1)",
@@ -259,6 +301,16 @@
       return url.toString();
     }
 
+    // Build a mailto link (To, Cc, Subject, Body)
+    function buildMailto(toList, ccList, subject, body){
+      const params = new URLSearchParams();
+      if (ccList && ccList.length) params.set('cc', ccList.join(','));
+      params.set('subject', subject);
+      params.set('body', body);
+      // Do not encode the "to" portion—clients expect raw addresses separated by commas
+      return `mailto:${toList.join(',')}?${params.toString()}`;
+    }
+
     // ---------- DOM & Events ----------
     const wardSel = $('#ward');
     const amtInput = $('#amount');
@@ -279,6 +331,16 @@
     const csvBtn  = $('#csvBtn');
     const shareBtn= $('#shareBtn');
     const linkBtn = $('#linkBtn');
+
+    const emailBtn = $('#emailBtn');
+    const copyEmailBtn = $('#copyEmailBtn');
+    const copyAddrsBtn = $('#copyAddrsBtn');
+
+    const cName = $('#cName');
+    const cEmail = $('#cEmail');
+    const mName = $('#mName');      // already set in HTML
+    const mEmail = $('#mEmail');    // already set in HTML
+    const ccListEl = $('#ccList');
 
     function computeAndRender(){
       const ward = wardSel.value;
@@ -353,52 +415,63 @@
         resultsBody.appendChild(tr);
       }
 
+      // Contacts UI
+      const ctr = CONTACTS[ward];
+      cName.textContent = ctr?.name || '—';
+      cEmail.textContent = ctr?.email || '—';
+
+      ccListEl.textContent = QUERY_CC.join(', ');
+
       // Tools & shareables
       const link = buildDeepLink(ward, amountCents);
       linkBtn.href = link;
 
-      copyBtn.onclick = async () => {
-        const lines = [
-          `Ward: ${ward}`,
-          `Bill (CAD): ${fmtMoney(amountCents)}`,
-          ...merged.map(r => `• ${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`),
-          `Total (CAD): ${fmtMoney(totalCents)}`,
-          `Link: ${link}`
-        ];
+      // Build email subject + body text
+      const subject = `Question re 2026 plan — ${ward} property tax breakdown`;
+      const greeting = `Hello ${ctr?.name || "Councillor"}, and ${MAYOR.name},`;
+      const lines = [
+        greeting,
+        "",
+        `Below is the breakdown of my property tax bill (CAD) for ${ward}. Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?`,
+        "",
+        `Total bill: ${fmtMoney(amountCents)}`,
+        ...merged.map(r => `${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`),
+        "",
+        `Shareable link: ${link}`,
+        "",
+        "Thank you,"
+        // User will add their name/contact details
+      ];
+      const body = lines.join('\n');
+
+      // Email buttons
+      emailBtn.onclick = () => {
+        const to = [ctr?.email || '', MAYOR.email].filter(Boolean);
+        const mailto = buildMailto(to, QUERY_CC, subject, body);
+        // Use location change to support mobile; fallback open window
+        try { window.location.href = mailto; }
+        catch { window.open(mailto, '_blank'); }
+      };
+
+      copyEmailBtn.onclick = async () => {
         try{
-          await navigator.clipboard.writeText(lines.join('\n'));
-          showMsg("Summary copied to clipboard.", false);
+          await navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
+          showMsg("Email text copied to clipboard.", false);
         }catch{
           showMsg("Copy failed. You can select and copy manually.", true);
         }
       };
 
-      csvBtn.onclick = () => {
-        const csvRows = [
-          ['Ward', ward],
-          ['Bill (CAD)', (amountCents/100).toFixed(2)],
-          [],
-          ['Category','Percent','Amount (CAD)']
-        ];
-        merged.forEach(r => {
-          csvRows.push([r.category, r.percent.toFixed(4), (r.cents/100).toFixed(2)]);
-        });
-        csvRows.push([]);
-        csvRows.push(['Total','100.00',(totalCents/100).toFixed(2)]);
-        const csv = csvRows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `tax-breakdown-${ward.replace(/\s+/g,'-').toLowerCase()}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      };
-
-      shareBtn.onclick = () => {
-        const shareUrl = encodeURIComponent(link);
-        const fb = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
-        window.open(fb, 'fbshare', 'width=640,height=600');
+      copyAddrsBtn.onclick = async () => {
+        const to = [ctr?.email || '', MAYOR.email].filter(Boolean).join(', ');
+        const cc = QUERY_CC.join(', ');
+        const text = `To: ${to}\nCc: ${cc}`;
+        try{
+          await navigator.clipboard.writeText(text);
+          showMsg("Email addresses copied.", false);
+        }catch{
+          showMsg("Copy failed. You can select and copy manually.", true);
+        }
       };
 
       out.classList.remove('hidden');
