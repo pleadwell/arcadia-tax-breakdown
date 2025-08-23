@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Residential Property Tax Breakdown</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0d6efd" />
+  <!-- Open Graph for rich previews when you share this link on Facebook -->
+  <meta property="og:title" content="Residential Property Tax Breakdown" />
+  <meta property="og:description" content="See how your tax bill is allocated across 12 budget categories by Ward (CAD)." />
+  <!-- Optional: host a 1200x630 image and paste its URL below -->
+  <!-- <meta property="og:image" content="https://yourdomain.com/og-image.jpg" /> -->
+
+  <style>
+    :root{
+      --bg:#f7f8fa; --surface:#ffffff; --ink:#1f2937; --muted:#6b7280; --accent:#0d6efd; --border:#e5e7eb;
+      --radius:12px; --shadow:0 6px 20px rgba(0,0,0,.06);
+    }
+    * { box-sizing:border-box }
+    body{ margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+    .wrap{ max-width:860px; margin:32px auto; padding:0 16px; }
+    header{ margin-bottom:16px; }
+    h1{ font-size:clamp(22px,3.8vw,30px); margin:0 0 6px; }
+    p.lead{ color:var(--muted); margin:0 0 16px; }
+    .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
+    .grid{ display:grid; grid-template-columns:1fr; gap:12px; }
+    @media (min-width:720px){ .grid{ grid-template-columns: 1fr 1fr auto } }
+
+    label{ font-weight:600; font-size:14px; display:block; margin-bottom:6px; }
+    select, input[type="text"]{
+      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; font-size:16px;
+    }
+    .actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    button{
+      border:0; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer;
+    }
+    .primary{ background:var(--accent); color:#fff; }
+    .ghost{ background:#fff; border:1px solid var(--border); color:var(--ink); }
+    .info{ color:#0b6b2f; background:#e8f5ec; border:1px solid #cce9d6; padding:10px 12px; border-radius:10px; }
+    .warn{ color:#7a2e0e; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:10px; }
+
+    .summary{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0 6px; }
+    .summary div{ background:#f1f5f9; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-weight:600; }
+
+    table{ width:100%; border-collapse:collapse; margin-top:6px; }
+    th, td{ padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; }
+    th{ background:#f9fafb; font-size:14px; }
+    tr:last-child td{ border-bottom:0; }
+    .right{ text-align:right; white-space:nowrap; }
+    .bar{
+      height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden; width:100%; position:relative;
+    }
+    .bar > span{
+      position:absolute; left:0; top:0; bottom:0; width:0%;
+      background:var(--accent);
+    }
+    tfoot td{ font-weight:700; }
+    .tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+
+    .muted{ color:var(--muted); font-size:13px; }
+    .footer{ color:var(--muted); margin-top:18px; font-size:13px; }
+    .hidden{ display:none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Residential Property Tax Breakdown</h1>
+      <p class="lead">Pick your Ward, enter your annual bill (CAD), and see the allocation across 12 budget categories. The totals match your bill to the penny.</p>
+    </header>
+
+    <section class="card" aria-label="Inputs">
+      <div class="grid">
+        <div>
+          <label for="ward">Ward</label>
+          <select id="ward" name="ward" autocomplete="off">
+            <option>Ward 1</option>
+            <option>Ward 2</option>
+            <option>Ward 3</option>
+            <option>Ward 4</option>
+            <option>Ward 5</option>
+            <option>Ward 6</option>
+          </select>
+        </div>
+        <div>
+          <label for="amount">Property tax bill (annual, CAD)</label>
+          <input id="amount" name="amount" inputmode="decimal" placeholder="e.g., 2,400" />
+        </div>
+        <div class="actions" style="align-self:end;">
+          <button class="primary" id="calcBtn" aria-label="Calculate breakdown">Calculate</button>
+          <button class="ghost" id="resetBtn" aria-label="Reset inputs">Reset</button>
+        </div>
+      </div>
+      <div id="msg" class="warn hidden" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="outCard" class="card hidden" aria-label="Results">
+      <div class="summary">
+        <div id="sumWard">Ward: —</div>
+        <div id="sumBill">Bill (CAD): —</div>
+        <div id="sumTotal">Allocated (CAD): —</div>
+      </div>
+
+      <div id="note" class="info hidden"></div>
+
+      <div class="tools">
+        <button class="ghost" id="copyBtn">Copy summary</button>
+        <button class="ghost" id="csvBtn">Download CSV</button>
+        <button class="ghost" id="shareBtn">Share on Facebook</button>
+        <a id="linkBtn" class="ghost" href="#" target="_blank" style="display:inline-block; text-decoration:none; padding:10px 14px; border-radius:10px; border:1px solid var(--border);">Open shareable link</a>
+      </div>
+
+      <table id="resultsTable" aria-describedby="sumTotal">
+        <thead>
+          <tr>
+            <th>Budget Category</th>
+            <th class="right">Percent</th>
+            <th style="width:40%">Allocation</th>
+            <th class="right">Amount (CAD)</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+        <tfoot>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td class="right" id="totalPct">100%</td>
+            <td></td>
+            <td class="right" id="totalAmt">—</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="footer">
+        ⚠️ Sample percentages included. Replace with your official splits when available. Rounding is distributed so the sum equals your exact bill.
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ---------- Configuration ----------
+    // Replace these with your official splits. Integers or decimals are fine; app normalizes to 100%.
+    const WARD_DATA = {
+      "Ward 1": {
+        "Education": 20, "Public Safety": 15, "Infrastructure": 10, "Health": 5,
+        "Parks": 5, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
+        "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
+      },
+      "Ward 2": {
+        "Education": 18, "Public Safety": 17, "Infrastructure": 9, "Health": 6,
+        "Parks": 6, "Transportation": 12, "Fire Services": 8, "Social Services": 6,
+        "Administration": 5, "Debt Services": 10, "Environmental": 1.5, "Emergency": 1.5
+      },
+      "Ward 3": {
+        "Education": 22, "Public Safety": 13, "Infrastructure": 11, "Health": 4,
+        "Parks": 4, "Transportation": 9, "Fire Services": 11, "Social Services": 4,
+        "Administration": 6, "Debt Services": 10, "Environmental": 3, "Emergency": 3
+      },
+      "Ward 4": {
+        "Education": 19, "Public Safety": 16, "Infrastructure": 10, "Health": 5,
+        "Parks": 5, "Transportation": 11, "Fire Services": 9, "Social Services": 5,
+        "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
+      },
+      "Ward 5": {
+        "Education": 21, "Public Safety": 14, "Infrastructure": 10, "Health": 5,
+        "Parks": 6, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
+        "Administration": 5, "Debt Services": 10, "Environmental": 2, "Emergency": 2
+      },
+      "Ward 6": {
+        "Education": 20, "Public Safety": 15, "Infrastructure": 10, "Health": 5,
+        "Parks": 5, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
+        "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
+      }
+    };
+
+    const LOCALE = 'en-CA';
+    const CURRENCY = 'CAD';
+
+    // ---------- Utilities ----------
+    const $ = (sel) => document.querySelector(sel);
+    const fmtMoney = (cents) =>
+      new Intl.NumberFormat(LOCALE, { style:'currency', currency: CURRENCY, currencyDisplay:'symbol' })
+        .format((cents||0)/100);
+
+    const parseAmount = (s) => {
+      if (typeof s !== 'string') return 0;
+      s = s.trim().replace(/[^\d.,-]/g,'');
+      if (s.includes(',') && s.includes('.')) s = s.replace(/,/g,'');
+      else if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
+      const num = Number(s);
+      return isFinite(num) ? Math.max(0, Math.round(num * 100)) : 0;
+    };
+
+    function normalizePercents(obj){
+      const entries = Object.entries(obj);
+      const sum = entries.reduce((t,[,p]) => t + Number(p), 0);
+      if (sum === 0) return entries.map(([k]) => [k, 0]);
+      return entries.map(([k,p]) => [k, (Number(p) / sum) * 100]);
+    }
+
+    // Distribute rounding so total == bill to the penny
+    function allocateCents(totalCents, percPairs){
+      const raw = percPairs.map(([k,p]) => [k, (totalCents * (p/100))]);
+      const floors = raw.map(([k,v]) => [k, Math.floor(v)]);
+      const remainders = raw.map(([k,v],i) => [k, v - floors[i][1]]);
+      let used = floors.reduce((t,[,c]) => t + c, 0);
+      let need = Math.round(raw.reduce((t,[,v]) => t + v, 0)) - used;
+
+      remainders.sort((a,b) => b[1] - a[1]);
+      const outMap = new Map(floors);
+      for (let i = 0; i < remainders.length && need > 0; i++, need--){
+        const k = remainders[i][0];
+        outMap.set(k, outMap.get(k) + 1);
+      }
+      return Array.from(outMap.entries()); // [[category, cents], ...]
+    }
+
+    function buildDeepLink(ward, amountCents){
+      const url = new URL(window.location.href);
+      url.searchParams.set('ward', ward);
+      url.searchParams.set('amount', (amountCents/100).toString());
+      // remove any legacy params
+      url.searchParams.delete('currency');
+      return url.toString();
+    }
+
+    // ---------- DOM & Events ----------
+    const wardSel = $('#ward');
+    const amtInput = $('#amount');
+    const calcBtn = $('#calcBtn');
+    const resetBtn = $('#resetBtn');
+
+    const msg = $('#msg');
+    const out = $('#outCard');
+    const note = $('#note');
+    const sumWard = $('#sumWard');
+    const sumBill = $('#sumBill');
+    const sumTotal = $('#sumTotal');
+    const totalPct = $('#totalPct');
+    const totalAmt = $('#totalAmt');
+    const resultsBody = $('#resultsBody');
+
+    const copyBtn = $('#copyBtn');
+    const csvBtn  = $('#csvBtn');
+    const shareBtn= $('#shareBtn');
+    const linkBtn = $('#linkBtn');
+
+    function computeAndRender(){
+      const ward = wardSel.value;
+      const amountCents = parseAmount(amtInput.value);
+
+      if (!WARD_DATA[ward]) {
+        showMsg("Ward not found.", true);
+        out.classList.add('hidden');
+        return;
+      }
+      if (!amountCents){
+        showMsg("Enter a valid bill amount (e.g., 2400).", true);
+        out.classList.add('hidden');
+        return;
+      }
+
+      // Normalize percentages, warn if off 100
+      const percPairsRaw = Object.entries(WARD_DATA[ward]);
+      const normalized = normalizePercents(WARD_DATA[ward]);
+      const sumRaw = percPairsRaw.reduce((t,[,p]) => t + Number(p), 0);
+
+      const off = Math.abs(sumRaw - 100);
+      if (off > 0.001){
+        note.textContent = `Note: Ward percentages sum to ${sumRaw.toFixed(2)}%. Values have been normalized to 100%.`;
+        note.classList.remove('hidden');
+      } else {
+        note.classList.add('hidden');
+      }
+
+      // Allocation with fair rounding
+      const allocated = allocateCents(amountCents, normalized);
+
+      // Merge & sort by percent (desc)
+      const merged = allocated.map(([k,cents]) => {
+        const p = normalized.find(([kk]) => kk===k)?.[1] ?? 0;
+        return { category:k, percent:p, cents };
+      }).sort((a,b) => b.percent - a.percent);
+
+      // Render summary
+      sumWard.textContent = `Ward: ${ward}`;
+      sumBill.textContent = `Bill (CAD): ${fmtMoney(amountCents)}`;
+      const totalCents = merged.reduce((t,r) => t + r.cents, 0);
+      sumTotal.textContent = `Allocated (CAD): ${fmtMoney(totalCents)}`;
+      totalPct.textContent = "100%";
+      totalAmt.textContent = fmtMoney(totalCents);
+
+      // Update results table
+      resultsBody.innerHTML = '';
+      for (const row of merged){
+        const tr = document.createElement('tr');
+
+        const tdCat = document.createElement('td');
+        tdCat.textContent = row.category;
+
+        const tdPct = document.createElement('td');
+        tdPct.className = 'right';
+        tdPct.textContent = `${row.percent.toFixed(2)}%`;
+
+        const tdBar = document.createElement('td');
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const fill = document.createElement('span');
+        fill.style.width = `${row.percent.toFixed(6)}%`;
+        bar.appendChild(fill);
+        tdBar.appendChild(bar);
+
+        const tdAmt = document.createElement('td');
+        tdAmt.className = 'right';
+        tdAmt.textContent = fmtMoney(row.cents);
+
+        tr.append(tdCat, tdPct, tdBar, tdAmt);
+        resultsBody.appendChild(tr);
+      }
+
+      // Tools & shareables
+      const link = buildDeepLink(ward, amountCents);
+      linkBtn.href = link;
+
+      copyBtn.onclick = async () => {
+        const lines = [
+          `Ward: ${ward}`,
+          `Bill (CAD): ${fmtMoney(amountCents)}`,
+          ...merged.map(r => `• ${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`),
+          `Total (CAD): ${fmtMoney(totalCents)}`,
+          `Link: ${link}`
+        ];
+        try{
+          await navigator.clipboard.writeText(lines.join('\n'));
+          showMsg("Summary copied to clipboard.", false);
+        }catch{
+          showMsg("Copy failed. You can select and copy manually.", true);
+        }
+      };
+
+      csvBtn.onclick = () => {
+        const csvRows = [
+          ['Ward', ward],
+          ['Bill (CAD)', (amountCents/100).toFixed(2)],
+          [],
+          ['Category','Percent','Amount (CAD)']
+        ];
+        merged.forEach(r => {
+          csvRows.push([r.category, r.percent.toFixed(4), (r.cents/100).toFixed(2)]);
+        });
+        csvRows.push([]);
+        csvRows.push(['Total','100.00',(totalCents/100).toFixed(2)]);
+        const csv = csvRows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `tax-breakdown-${ward.replace(/\s+/g,'-').toLowerCase()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+
+      shareBtn.onclick = () => {
+        const shareUrl = encodeURIComponent(link);
+        const fb = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+        window.open(fb, 'fbshare', 'width=640,height=600');
+      };
+
+      out.classList.remove('hidden');
+      showMsg("", false, true);
+
+      // Persist last selections (no currency anymore)
+      localStorage.setItem('tax:lastWard', ward);
+      localStorage.setItem('tax:lastAmt', amountCents);
+      history.replaceState(null, '', link);
+    }
+
+    function showMsg(text, isError=false, clear=false){
+      if (clear || !text){
+        msg.classList.add('hidden');
+        msg.textContent = '';
+        return;
+      }
+      msg.textContent = text;
+      msg.className = (isError ? 'warn' : 'info');
+    }
+
+    // Event wiring
+    calcBtn.addEventListener('click', (e) => { e.preventDefault(); computeAndRender(); });
+    resetBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      amtInput.value = '';
+      out.classList.add('hidden');
+      showMsg("", false, true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('ward'); url.searchParams.delete('amount'); url.searchParams.delete('currency');
+      history.replaceState(null, '', url.toString());
+    });
+
+    // Auto-calc on Enter key
+    amtInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); computeAndRender(); } });
+
+    // Load from deep link or last selections
+    (function init(){
+      const url = new URL(window.location.href);
+      const qWard = url.searchParams.get('ward');
+      const qAmt = url.searchParams.get('amount');
+      const lastWard = localStorage.getItem('tax:lastWard');
+      const lastAmt  = localStorage.getItem('tax:lastAmt');
+
+      if (qWard && WARD_DATA[qWard]) wardSel.value = qWard;
+      else if (lastWard && WARD_DATA[lastWard]) wardSel.value = lastWard;
+
+      if (qAmt){
+        amtInput.value = qAmt;
+        computeAndRender();
+      } else if (lastAmt){
+        amtInput.value = (Number(lastAmt)/100).toString();
+      }
+    })();
+  </script>
+</body>
+</html>
