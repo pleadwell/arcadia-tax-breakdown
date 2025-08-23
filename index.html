@@ -40,9 +40,6 @@
     .info{ color:#0b6b2f; background:#e8f5ec; border:1px solid #cce9d6; padding:10px 12px; border-radius:10px; }
     .warn{ color:#7a2e0e; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:10px; }
 
-    .summary{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0 6px; }
-    .summary div{ background:#f1f5f9; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-weight:600; }
-
     table{ width:100%; border-collapse:collapse; margin-top:6px; }
     th, td{ padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; }
     th{ background:#f9fafb; font-size:14px; }
@@ -56,8 +53,8 @@
       background:var(--accent);
     }
     tfoot td{ font-weight:700; }
-    .tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
 
+    .tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
     .muted{ color:var(--muted); font-size:13px; }
     .footer{ color:var(--muted); margin-top:18px; font-size:13px; }
     .hidden{ display:none !important; }
@@ -74,7 +71,7 @@
       .brand-logo img.logo { width:40px; height:40px; }
     }
 
-    /* Contact card styling */
+    /* Contact area */
     .contact { margin-top:12px; display:grid; gap:8px; }
     .contact .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
     .pill{ background:#f1f5f9; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:14px; }
@@ -129,23 +126,21 @@
     </section>
 
     <section id="outCard" class="card hidden" aria-label="Results">
-      <div class="summary">
-        <div id="sumWard">Ward: —</div>
-        <div id="sumBill">Bill (CAD): —</div>
-        <div id="sumTotal">Allocated (CAD): —</div>
-      </div>
-
-      <div id="note" class="info hidden"></div>
+      <!-- (1) Grey summary boxes removed as requested -->
 
       <div class="tools">
-        <button class="ghost" id="copyBtn">Copy summary</button>
-        <button class="ghost" id="csvBtn">Download CSV</button>
+        <!-- (2) Share on Facebook first; CSV removed; new PNG button added -->
         <button class="ghost" id="shareBtn">Share on Facebook</button>
-        <a id="linkBtn" class="ghost" href="#" target="_blank" style="display:inline-block; text-decoration:none; padding:10px 14px; border-radius:10px; border:1px solid var(--border);">Open shareable link</a>
         <button class="primary" id="emailBtn" title="Email your councillor & mayor">Email my councillor &amp; mayor</button>
+        <button class="ghost" id="pngBtn" title="Download the table as an image">Download image (PNG)</button>
+        <a id="linkBtn" class="ghost" href="#" target="_blank" style="display:inline-block; text-decoration:none; padding:10px 14px; border-radius:10px; border:1px solid var(--border);">Open shareable link</a>
         <button class="ghost" id="copyEmailBtn" title="Copy email text for manual paste">Copy email text</button>
         <button class="ghost" id="copyAddrsBtn" title="Copy email addresses">Copy email addresses</button>
+        <button class="ghost" id="copyBtn" title="Copy a plain-text summary (optional)">Copy summary</button>
       </div>
+
+      <!-- (3) Preface before Councillor area -->
+      <p style="margin-top:10px;"><strong>You can send an email now to your Councillor, Mayor and the Arcadia office.</strong></p>
 
       <div class="contact">
         <div class="row">
@@ -162,10 +157,10 @@
           <span class="label">Queries CC list:</span>
           <span id="ccList" class="pill address">info@arcadianb.ca, Karrie.Bedford@arcadianb.ca, Jessica.Mcgarity@arcadianb.ca</span>
         </div>
-        <p class="muted">Tip: Clicking “Email my councillor & mayor” opens your email app with all details. If that doesn’t work on your device, use “Copy email text” and “Copy email addresses” instead.</p>
+        <p class="muted">Tip: After clicking “Download image (PNG)”, attach the image in your email app. Some devices can also paste images directly into the email body.</p>
       </div>
 
-      <table id="resultsTable" aria-describedby="sumTotal">
+      <table id="resultsTable" aria-label="Breakdown table">
         <thead>
           <tr>
             <th>Budget Category</th>
@@ -177,13 +172,15 @@
         <tbody id="resultsBody"></tbody>
         <tfoot>
           <tr>
-            <td><strong>Total</strong></td>
+            <td><strong>This is my Property Tax total</strong></td>
             <td class="right" id="totalPct">100%</td>
             <td></td>
             <td class="right" id="totalAmt">—</td>
           </tr>
         </tfoot>
       </table>
+
+      <div id="note" class="info hidden" style="margin-top:10px;"></div>
 
       <div class="footer">
         ⚠️ Sample percentages included. Replace with your official splits when available. Rounding is distributed so the sum equals your exact bill.
@@ -193,7 +190,6 @@
 
   <script>
     // ---------- Configuration ----------
-    // Replace these with your official splits. Integers or decimals are fine; app normalizes to 100%.
     const WARD_DATA = {
       "Upper Gagetown (Ward 1)": {
         "Education": 20, "Public Safety": 15, "Infrastructure": 10, "Health": 5,
@@ -227,7 +223,7 @@
       }
     };
 
-    // Representatives per ward + mayor
+    // Contacts
     const CONTACTS = {
       "Upper Gagetown (Ward 1)": { name: "Tammy Gordon", email: "tammy.gordon@arcadianb.ca" },
       "Gagetown (Ward 2)": { name: "Paul Mennier", email: "paul.mennier@arcadianb.ca" },
@@ -237,11 +233,9 @@
       "Waterborough (Ward 6)": { name: "Paula Gahan-McGee", email: "Paula.gahan-magee@arcadianb.ca" }
     };
     const MAYOR = { name: "Clinton Sharpe", email: "clinton.sharpe@arcadianb.ca" };
-
-    // “Email to send all queries to” (CC)
     const QUERY_CC = ["info@arcadianb.ca", "Karrie.Bedford@arcadianb.ca", "Jessica.Mcgarity@arcadianb.ca"];
 
-    // Back-compat: map old names to new labels (so links like ?ward=Ward%201 still work)
+    // Back-compat for old links
     const LEGACY_WARD_ALIASES = {
       "Ward 1": "Upper Gagetown (Ward 1)",
       "Ward 2": "Gagetown (Ward 2)",
@@ -297,18 +291,143 @@
       const url = new URL(window.location.href);
       url.searchParams.set('ward', ward);
       url.searchParams.set('amount', (amountCents/100).toString());
-      url.searchParams.delete('currency'); // legacy cleanup
+      url.searchParams.delete('currency');
       return url.toString();
     }
 
-    // Build a mailto link (To, Cc, Subject, Body)
     function buildMailto(toList, ccList, subject, body){
       const params = new URLSearchParams();
       if (ccList && ccList.length) params.set('cc', ccList.join(','));
       params.set('subject', subject);
       params.set('body', body);
-      // Do not encode the "to" portion—clients expect raw addresses separated by commas
       return `mailto:${toList.join(',')}?${params.toString()}`;
+    }
+
+    // ---- Canvas export of the visual table to PNG (no external libs) ----
+    function truncateToWidth(ctx, text, maxWidth){
+      if (ctx.measureText(text).width <= maxWidth) return text;
+      let ellipsis = '…', len = text.length;
+      while (len > 0 && ctx.measureText(text.slice(0, len) + ellipsis).width > maxWidth) len--;
+      return text.slice(0, len) + ellipsis;
+    }
+
+    async function generateTablePNG(ward, mergedRows, totalCents){
+      const pad = 24;
+      const rowH = 36;
+      const headH = 44;
+      const footH = 48;
+
+      const colCat = 420;
+      const colPct = 100;
+      const colBar = 340;
+      const colAmt = 160;
+
+      const innerW = colCat + colPct + colBar + colAmt;
+      const width = pad*2 + innerW;
+      const height = pad + headH + (mergedRows.length * rowH) + footH + pad;
+
+      const scale = Math.min(window.devicePixelRatio || 2, 3);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+
+      // Background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      // Fonts
+      const fontMono = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+      const fontSans = 'system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
+
+      // Header row background
+      ctx.fillStyle = '#f9fafb';
+      ctx.fillRect(pad, pad, innerW, headH);
+
+      // Header text
+      ctx.fillStyle = '#111827';
+      ctx.font = '700 16px ' + fontSans;
+      let x = pad, y = pad + 28;
+      ctx.fillText('Budget Category', x, y);
+      x += colCat;
+      ctx.fillText('Percent', x + colPct - ctx.measureText('Percent').width - 8, y);
+      x += colPct;
+      ctx.fillText('Allocation', x + 8, y);
+      x += colBar;
+      ctx.fillText('Amount (CAD)', x + colAmt - ctx.measureText('Amount (CAD)').width - 8, y);
+
+      // Rows
+      let baseY = pad + headH;
+      for (const r of mergedRows){
+        const yMid = baseY + rowH/2;
+        let cx = pad;
+
+        // Category
+        ctx.fillStyle = '#111827';
+        ctx.font = '500 14px ' + fontSans;
+        const cat = truncateToWidth(ctx, r.category, colCat - 8);
+        ctx.fillText(cat, cx + 4, yMid + 5);
+        cx += colCat;
+
+        // Percent
+        ctx.textAlign = 'right';
+        ctx.font = '500 14px ' + fontMono;
+        ctx.fillText(r.percent.toFixed(2) + '%', cx + colPct - 4, yMid + 5);
+        ctx.textAlign = 'left';
+        cx += colPct;
+
+        // Bar
+        const barY = yMid - 6;
+        ctx.fillStyle = '#e5e7eb';
+        ctx.fillRect(cx + 4, barY, colBar - 8, 12);
+        ctx.fillStyle = '#0d6efd';
+        const fillW = Math.max(0, (colBar - 8) * (r.percent / 100));
+        ctx.fillRect(cx + 4, barY, fillW, 12);
+        cx += colBar;
+
+        // Amount
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#111827';
+        ctx.font = '600 14px ' + fontMono;
+        ctx.fillText(new Intl.NumberFormat('en-CA', {style:'currency', currency:'CAD'}).format(r.cents/100), cx + colAmt - 4, yMid + 5);
+        ctx.textAlign = 'left';
+
+        // Row divider
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.beginPath();
+        ctx.moveTo(pad, baseY + rowH);
+        ctx.lineTo(pad + innerW, baseY + rowH);
+        ctx.stroke();
+
+        baseY += rowH;
+      }
+
+      // Footer (Total)
+      ctx.fillStyle = '#111827';
+      ctx.font = '700 14px ' + fontSans;
+      ctx.fillText('This is my Property Tax total', pad + 4, baseY + 30);
+
+      ctx.textAlign = 'right';
+      ctx.font = '700 14px ' + fontMono;
+      ctx.fillText(new Intl.NumberFormat('en-CA', {style:'currency', currency:'CAD'}).format(totalCents/100), pad + innerW - 4, baseY + 30);
+      ctx.textAlign = 'left';
+
+      // Outer border
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.strokeRect(pad, pad, innerW, headH + (mergedRows.length * rowH) + footH);
+
+      return new Promise(resolve => canvas.toBlob(blob => resolve({blob, canvas}), 'image/png'));
+    }
+
+    function downloadBlob(blob, filename){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     }
 
     // ---------- DOM & Events ----------
@@ -320,27 +439,27 @@
     const msg = $('#msg');
     const out = $('#outCard');
     const note = $('#note');
-    const sumWard = $('#sumWard');
-    const sumBill = $('#sumBill');
-    const sumTotal = $('#sumTotal');
     const totalPct = $('#totalPct');
     const totalAmt = $('#totalAmt');
     const resultsBody = $('#resultsBody');
 
     const copyBtn = $('#copyBtn');
-    const csvBtn  = $('#csvBtn');
     const shareBtn= $('#shareBtn');
     const linkBtn = $('#linkBtn');
-
     const emailBtn = $('#emailBtn');
     const copyEmailBtn = $('#copyEmailBtn');
     const copyAddrsBtn = $('#copyAddrsBtn');
+    const pngBtn = $('#pngBtn');
 
     const cName = $('#cName');
     const cEmail = $('#cEmail');
-    const mName = $('#mName');      // already set in HTML
-    const mEmail = $('#mEmail');    // already set in HTML
+    const mName = $('#mName');
+    const mEmail = $('#mEmail');
     const ccListEl = $('#ccList');
+
+    let lastMergedForImage = null;
+    let lastTotalCents = 0;
+    let lastWardName = '';
 
     function computeAndRender(){
       const ward = wardSel.value;
@@ -379,14 +498,6 @@
         return { category:k, percent:p, cents };
       }).sort((a,b) => b.percent - a.percent);
 
-      // Render summary
-      sumWard.textContent = `Ward: ${ward}`;
-      sumBill.textContent = `Bill (CAD): ${fmtMoney(amountCents)}`;
-      const totalCents = merged.reduce((t,r) => t + r.cents, 0);
-      sumTotal.textContent = `Allocated (CAD): ${fmtMoney(totalCents)}`;
-      totalPct.textContent = "100%";
-      totalAmt.textContent = fmtMoney(totalCents);
-
       // Update results table
       resultsBody.innerHTML = '';
       for (const row of merged){
@@ -415,42 +526,41 @@
         resultsBody.appendChild(tr);
       }
 
+      // Totals
+      const totalCents = merged.reduce((t,r) => t + r.cents, 0);
+      totalPct.textContent = "100%";
+      totalAmt.textContent = fmtMoney(totalCents);
+
       // Contacts UI
       const ctr = CONTACTS[ward];
       cName.textContent = ctr?.name || '—';
       cEmail.textContent = ctr?.email || '—';
-
       ccListEl.textContent = QUERY_CC.join(', ');
 
       // Tools & shareables
       const link = buildDeepLink(ward, amountCents);
       linkBtn.href = link;
 
-      // Build email subject + body text
+      // Email subject + body (no line-by-line figures; image instead)
       const subject = `Question re 2026 plan — ${ward} property tax breakdown`;
       const greeting = `Hello ${ctr?.name || "Councillor"}, and ${MAYOR.name},`;
       const lines = [
         greeting,
         "",
-        `Below is the breakdown of my property tax bill (CAD) for ${ward}. Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?`,
+        `My annual property tax bill for ${ward} is ${fmtMoney(amountCents)}.`,
+        "Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?",
         "",
-        `Total bill: ${fmtMoney(amountCents)}`,
-        ...merged.map(r => `${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`),
-        "",
+        "I've attached an image of the breakdown (12 budget categories) for your reference.",
         `Shareable link: ${link}`,
         "",
         "Thank you,"
-        // User will add their name/contact details
       ];
       const body = lines.join('\n');
 
-      // Email buttons
       emailBtn.onclick = () => {
         const to = [ctr?.email || '', MAYOR.email].filter(Boolean);
         const mailto = buildMailto(to, QUERY_CC, subject, body);
-        // Use location change to support mobile; fallback open window
-        try { window.location.href = mailto; }
-        catch { window.open(mailto, '_blank'); }
+        try { window.location.href = mailto; } catch { window.open(mailto, '_blank'); }
       };
 
       copyEmailBtn.onclick = async () => {
@@ -474,8 +584,31 @@
         }
       };
 
+      shareBtn.onclick = () => {
+        const shareUrl = encodeURIComponent(link);
+        const fb = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+        window.open(fb, 'fbshare', 'width=640,height=600');
+      };
+
+      // PNG export button
+      pngBtn.onclick = async () => {
+        try{
+          const { blob } = await generateTablePNG(ward, lastMergedForImage || merged, lastTotalCents || totalCents);
+          const fname = `arcadia-tax-breakdown-${ward.replace(/\s+/g,'-').toLowerCase()}.png`;
+          downloadBlob(blob, fname);
+          showMsg("Image downloaded. Attach it to your email before sending.", false);
+        }catch(e){
+          showMsg("Could not generate image on this device.", true);
+        }
+      };
+
       out.classList.remove('hidden');
       showMsg("", false, true);
+
+      // Persist for image export
+      lastMergedForImage = merged;
+      lastTotalCents = totalCents;
+      lastWardName = ward;
 
       // Persist last selections
       localStorage.setItem('tax:lastWard', ward);
