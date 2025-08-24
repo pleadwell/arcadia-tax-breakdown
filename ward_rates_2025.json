@@ -1,0 +1,302 @@
+{
+  "Upper Gagetown (Ward 1)": {
+    "GENERAL GOVERNMENT SERVICES": {
+      "percent": 9.2,
+      "explain": "Office staff, councillors, etc"
+    },
+    "Police Protection": {
+      "percent": 8.7,
+      "explain": "RCMP contract through Province"
+    },
+    "Fire Protection": {
+      "percent": 30.8,
+      "explain": "Fire Department"
+    },
+    "Emergency Measures": {
+      "percent": 1.3,
+      "explain": "Emergency measures"
+    },
+    "Other Protection": {
+      "percent": 1.1,
+      "explain": "Mainly SPCA animal control"
+    },
+    "TRANSPORTATION SERVICES": {
+      "percent": 4.9,
+      "explain": "Mainly street lighting"
+    },
+    "ENVIRONMENTAL HEALTH SERVICES": {
+      "percent": 5.7,
+      "explain": "Solid Waste (Garbage pickup)"
+    },
+    "PUBLIC HEALTH SERVICES": {
+      "percent": 0.0,
+      "explain": "Medical clinics (Cambridge-Narrows & Gagetown)"
+    },
+    "ENVIRONMENTAL DEVELOPMENT SERVICES": {
+      "percent": 2.6,
+      "explain": "Rural planning LSD"
+    },
+    "RECREATION & CULTURAL SERVICE": {
+      "percent": 2.6,
+      "explain": "Recreation"
+    },
+    "FISCAL SERVICES": {
+      "percent": 33.2,
+      "explain": "Debt (Fire Department)"
+    },
+    "OTHER SERVICES": {
+      "percent": 0.0,
+      "explain": "N/A"
+    }
+  },
+  "Gagetown (Ward 2)": {
+    "GENERAL GOVERNMENT SERVICES": {
+      "percent": 12.0,
+      "explain": "Office staff, councillors, etc"
+    },
+    "Police Protection": {
+      "percent": 9.3,
+      "explain": "RCMP contract through Province"
+    },
+    "Fire Protection": {
+      "percent": 14.6,
+      "explain": "Fire Department"
+    },
+    "Emergency Measures": {
+      "percent": 0.6,
+      "explain": "Emergency measures"
+    },
+    "Other Protection": {
+      "percent": 0.2,
+      "explain": "Mainly SPCA animal control"
+    },
+    "TRANSPORTATION SERVICES": {
+      "percent": 37.8,
+      "explain": "Local roads, DTI costs for summer/winter maintenance, street lighting"
+    },
+    "ENVIRONMENTAL HEALTH SERVICES": {
+      "percent": 6.2,
+      "explain": "Solid Waste (Garbage pickup)"
+    },
+    "PUBLIC HEALTH SERVICES": {
+      "percent": 1.1,
+      "explain": "Medical clinics (Cambridge-Narrows & Gagetown)"
+    },
+    "ENVIRONMENTAL DEVELOPMENT SERVICES": {
+      "percent": 5.5,
+      "explain": "Regional Service Commission, local grants, etc"
+    },
+    "RECREATION & CULTURAL SERVICE": {
+      "percent": 2.8,
+      "explain": "Recreation"
+    },
+    "FISCAL SERVICES": {
+      "percent": 9.8,
+      "explain": "Debt (Municipal roads & Fire Protection)"
+    },
+    "OTHER SERVICES": {
+      "percent": 0.0,
+      "explain": "N/A"
+    }
+  },
+  "Hampstead (Ward 3)": {
+    "GENERAL GOVERNMENT SERVICES": {
+      "percent": 22.1,
+      "explain": "Office staff, councillors, etc"
+    },
+    "Police Protection": {
+      "percent": 20.4,
+      "explain": "RCMP contract through Province"
+    },
+    "Fire Protection": {
+      "percent": 29.0,
+      "explain": "Fire Department (Gagetown provides service to Hampstead)"
+    },
+    "Emergency Measures": {
+      "percent": 0.5,
+      "explain": "Emergency measures"
+    },
+    "Other Protection": {
+      "percent": 0.5,
+      "explain": "Mainly SPCA animal control"
+    },
+    "TRANSPORTATION SERVICES": {
+      "percent": 0.8,
+      "explain": "Mainly street lighting"
+    },
+    "ENVIRONMENTAL HEALTH SERVICES": {
+      "percent": 13.8,
+      "explain": "Solid Waste (Garbage pickup)"
+    },
+    "PUBLIC HEALTH SERVICES": {
+      "percent": 0.0,
+      "explain": "Medical clinics (Cambridge-Narrows & Gagetown)"
+    },
+    "ENVIRONMENTAL DEVELOPMENT SERVICES": {
+      "percent": 6.2,
+      "explain": "Rural planning LSD"
+    },
+    "RECREATION & CULTURAL SERVICE": {
+      "percent": 6.0,
+      "explain": "Recreation"
+    },
+    "FISCAL SERVICES": {
+      "percent": 0.8,
+      "explain": "Debt (Hampstead portion for fire service)"
+    },
+    "OTHER SERVICES": {
+      "percent": 0.0,
+      "explain": "N/A"
+    }
+  },
+  "Cambridge (Ward 4)": {
+    "GENERAL GOVERNMENT SERVICES": {
+      "percent": 20.1,
+      "explain": "Office staff, councillors, etc"
+    },
+    "Police Protection": {
+      "percent": 19.6,
+      "explain": "RCMP contract through Province"
+    },
+    "Fire Protection": {
+      "percent": 13.7,
+      "explain": "Fire Department"
+    },
+    "Emergency Measures": {
+      "percent": 1.5,
+      "explain": "Emergency measures"
+    },
+    "Other Protection": {
+      "percent": 0.4,
+      "explain": "Mainly SPCA animal control"
+    },
+    "TRANSPORTATION SERVICES": {
+      "percent": 0.1,
+      "explain": "Mainly street lighting"
+    },
+    "ENVIRONMENTAL HEALTH SERVICES": {
+      "percent": 12.0,
+      "explain": "Solid Waste (Garbage pickup)"
+    },
+    "PUBLIC HEALTH SERVICES": {
+      "percent": 0.0,
+      "explain": "Medical clinics (Cambridge-Narrows & Gagetown)"
+    },
+    "ENVIRONMENTAL DEVELOPMENT SERVICES": {
+      "percent": 5.9,
+      "explain": "Rural planning LSD"
+    },
+    "RECREATION & CULTURAL SERVICE": {
+      "percent": 5.8,
+      "explain": "Recreation"
+    },
+    "FISCAL SERVICES": {
+      "percent": 20.9,
+      "explain": "Debt (Fire Department)"
+    },
+    "OTHER SERVICES": {
+      "percent": 0.0,
+      "explain": "N/A"
+    }
+  },
+  "Cambridge Narrows (Ward 5)": {
+    "GENERAL GOVERNMENT SERVICES": {
+      "percent": 14.2,
+      "explain": "Office staff, councillors, etc"
+    },
+    "Police Protection": {
+      "percent": 12.9,
+      "explain": "RCMP contract through Province"
+    },
+    "Fire Protection": {
+      "percent": 9.6,
+      "explain": "Fire Department"
+    },
+    "Emergency Measures": {
+      "percent": 0.8,
+      "explain": "Emergency measures"
+    },
+    "Other Protection": {
+      "percent": 0.3,
+      "explain": "Mainly SPCA animal control"
+    },
+    "TRANSPORTATION SERVICES": {
+      "percent": 25.1,
+      "explain": "Local roads, DTI costs for summer/winter maintenance, street lighting"
+    },
+    "ENVIRONMENTAL HEALTH SERVICES": {
+      "percent": 7.4,
+      "explain": "Solid Waste (Garbage pickup)"
+    },
+    "PUBLIC HEALTH SERVICES": {
+      "percent": 0.7,
+      "explain": "Medical clinics (Cambridge-Narrows & Gagetown)"
+    },
+    "ENVIRONMENTAL DEVELOPMENT SERVICES": {
+      "percent": 5.9,
+      "explain": "Regional Service Commission, local grants, etc"
+    },
+    "RECREATION & CULTURAL SERVICE": {
+      "percent": 3.8,
+      "explain": "Recreation"
+    },
+    "FISCAL SERVICES": {
+      "percent": 19.3,
+      "explain": "Debt (Municipal roads & Fire Protection)"
+    },
+    "OTHER SERVICES": {
+      "percent": 0.0,
+      "explain": "N/A"
+    }
+  },
+  "Waterborough (Ward 6)": {
+    "GENERAL GOVERNMENT SERVICES": {
+      "percent": 19.5,
+      "explain": "Office staff, councillors, etc"
+    },
+    "Police Protection": {
+      "percent": 19.0,
+      "explain": "RCMP contract through Province"
+    },
+    "Fire Protection": {
+      "percent": 26.4,
+      "explain": "Fire Department"
+    },
+    "Emergency Measures": {
+      "percent": 0.9,
+      "explain": "Emergency measures"
+    },
+    "Other Protection": {
+      "percent": 0.4,
+      "explain": "Mainly SPCA animal control"
+    },
+    "TRANSPORTATION SERVICES": {
+      "percent": 0.1,
+      "explain": "Mainly street lighting"
+    },
+    "ENVIRONMENTAL HEALTH SERVICES": {
+      "percent": 12.3,
+      "explain": "Solid Waste (Garbage pickup)"
+    },
+    "PUBLIC HEALTH SERVICES": {
+      "percent": 0.0,
+      "explain": "Medical clinics (Cambridge-Narrows & Gagetown)"
+    },
+    "ENVIRONMENTAL DEVELOPMENT SERVICES": {
+      "percent": 5.7,
+      "explain": "Rural planning LSD"
+    },
+    "RECREATION & CULTURAL SERVICE": {
+      "percent": 5.6,
+      "explain": "Recreation"
+    },
+    "FISCAL SERVICES": {
+      "percent": 10.0,
+      "explain": "Debt (Fire Department)"
+    },
+    "OTHER SERVICES": {
+      "percent": 0.0,
+      "explain": "N/A"
+    }
+  }
+}

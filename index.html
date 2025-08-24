@@ -6,167 +6,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0d6efd" />
   <link rel="icon" href="logo.svg" type="image/svg+xml" />
-  <!-- Open Graph for richer Facebook previews -->
   <meta property="og:title" content="Arcadia Residential Property Tax Breakdown" />
   <meta property="og:description" content="Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny." />
-  <!-- Optional: if you have a 1200x630 preview image, add: -->
-  <!-- <meta property="og:image" content="https://your-domain.example/og-image.jpg" /> -->
-
   <style>
-    :root{
-      --bg:#f7f8fa; --surface:#ffffff; --ink:#1f2937; --muted:#6b7280; --accent:#0d6efd; --border:#e5e7eb;
-      --radius:12px; --shadow:0 6px 20px rgba(0,0,0,.06);
-    }
-    * { box-sizing:border-box }
+    :root{ --bg:#f7f8fa; --surface:#fff; --ink:#1f2937; --muted:#6b7280; --accent:#0d6efd; --border:#e5e7eb; --radius:12px; --shadow:0 6px 20px rgba(0,0,0,.06); }
+    *{ box-sizing:border-box }
     body{ margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
-    .wrap{ max-width:860px; margin:32px auto; padding:0 16px; }
+    .wrap{ max-width:960px; margin:32px auto; padding:0 16px; }
     header{ margin-bottom:16px; }
     h1{ font-size:clamp(22px,3.8vw,30px); margin:0 0 6px; }
     p.lead{ color:var(--muted); margin:0 0 16px; }
     .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
     .grid{ display:grid; grid-template-columns:1fr; gap:12px; }
-    @media (min-width:720px){ .grid{ grid-template-columns: 1fr 1fr auto } }
-
+    @media (min-width:820px){ .grid{ grid-template-columns: 1fr 1fr 1fr auto } }
     label{ font-weight:600; font-size:14px; display:block; margin-bottom:6px; }
-    select, input[type="text"]{
-      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; font-size:16px;
-    }
+    select, input[type="text"]{ width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:16px; background:#fff; }
     .actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    button{
-      border:0; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer;
-    }
+    button{ border:0; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; }
     .primary{ background:var(--accent); color:#fff; }
-    .ghost{ background:#fff; border:1px solid var(--border); color:var(--ink); }
-    .info{ color:#0b6b2f; background:#e8f5ec; border:1px solid #cce9d6; padding:10px 12px; border-radius:10px; }
+    .ghost{ background:#fff; border:1px solid var(--border); color:#111; }
     .warn{ color:#7a2e0e; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:10px; }
-
+    .info{ color:#0b6b2f; background:#e8f5ec; border:1px solid #cce9d6; padding:10px 12px; border-radius:10px; }
     table{ width:100%; border-collapse:collapse; margin-top:6px; }
-    th, td{ padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; }
+    th, td{ padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
     th{ background:#f9fafb; font-size:14px; }
     tr:last-child td{ border-bottom:0; }
     .right{ text-align:right; white-space:nowrap; }
-    .bar{
-      height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden; width:100%; position:relative;
-    }
-    .bar > span{
-      position:absolute; left:0; top:0; bottom:0; width:0%;
-      background:var(--accent);
-    }
+    .bar{ height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden; width:100%; position:relative; }
+    .bar > span{ position:absolute; left:0; top:0; bottom:0; width:0%; background:var(--accent); }
     tfoot td{ font-weight:700; }
-
     .tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
     .muted{ color:var(--muted); font-size:13px; }
-    .footer{ color:var(--muted); margin-top:18px; font-size:13px; }
     .hidden{ display:none !important; }
-
-    /* --- Brand header with logo --- */
-    header.brand { display:flex; align-items:center; gap:12px; }
-    .brand-logo { display:inline-flex; align-items:center; }
-    .brand-logo img.logo {
-      display:block;
-      width:48px; height:48px;
-      object-fit:contain;
-    }
-    @media (max-width:480px){
-      .brand-logo img.logo { width:40px; height:40px; }
-    }
-
-    /* Contact area */
-    .contact { margin-top:12px; display:grid; gap:8px; }
-    .contact .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+    header.brand{ display:flex; align-items:center; gap:12px; }
+    .brand-logo img.logo{ display:block; width:48px; height:48px; object-fit:contain; }
+    @media (max-width:480px){ .brand-logo img.logo{ width:40px; height:40px; } }
+    .contact{ margin-top:12px; display:grid; gap:8px; }
+    .contact .row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
     .pill{ background:#f1f5f9; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:14px; }
-    .contact .label{ font-weight:700; color:#111827; }
-    .contact .address{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .label{ font-weight:700; color:#111827; }
+    .address{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header class="brand">
-      <div class="brand-logo">
-        <img
-          class="logo"
-          src="./logo.svg"
-          alt="Arcadia"
-          width="48" height="48"
-          decoding="async"
-          fetchpriority="high"
-          onerror="this.style.display='none'"/>
-      </div>
+      <div class="brand-logo"><img class="logo" src="./logo.svg" alt="Arcadia" width="48" height="48" decoding="async" fetchpriority="high" onerror="this.style.display='none'"/></div>
       <div>
         <h1>Arcadia Residential Property Tax Breakdown</h1>
-        <p class="lead">
-          Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny.
-        </p>
+        <p class="lead">Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny.</p>
       </div>
     </header>
 
     <section class="card" aria-label="Inputs">
       <div class="grid">
-        <div>
-          <label for="ward">Ward</label>
-          <select id="ward" name="ward" autocomplete="off">
-            <option>Upper Gagetown (Ward 1)</option>
-            <option>Gagetown (Ward 2)</option>
-            <option>Hampstead (Ward 3)</option>
-            <option>Cambridge (Ward 4)</option>
-            <option>Cambridge Narrows (Ward 5)</option>
-            <option>Waterborough (Ward 6)</option>
-          </select>
-        </div>
-        <div>
-          <label for="amount">Property tax bill (annual, CAD)</label>
-          <input id="amount" name="amount" inputmode="decimal" placeholder="e.g., 2,400" />
-        </div>
-        <div class="actions" style="align-self:end;">
-          <button class="primary" id="calcBtn" aria-label="Calculate breakdown">Calculate</button>
-          <button class="ghost" id="resetBtn" aria-label="Reset inputs">Reset</button>
-        </div>
+        <div><label for="ward">Ward</label><select id="ward"></select></div>
+        <div><label for="compareWard">Compare to (optional)</label><select id="compareWard"><option value="">— no comparison —</option></select></div>
+        <div><label for="amount">Property tax bill (annual, CAD)</label><input id="amount" inputmode="decimal" placeholder="e.g., 2,400" /></div>
+        <div class="actions" style="align-self:end;"><button class="primary" id="calcBtn">Calculate</button><button class="ghost" id="resetBtn">Reset</button></div>
       </div>
       <div id="msg" class="warn hidden" role="status" aria-live="polite"></div>
     </section>
 
     <section id="outCard" class="card hidden" aria-label="Results">
-      <!-- (1) Grey summary boxes removed as requested -->
-
       <div class="tools">
-        <!-- (2) Share on Facebook first; CSV removed; new PNG button added -->
         <button class="ghost" id="shareBtn">Share on Facebook</button>
-        <button class="primary" id="emailBtn" title="Email your councillor & mayor">Email my councillor &amp; mayor</button>
-        <button class="ghost" id="pngBtn" title="Download the table as an image">Download image (PNG)</button>
-        <a id="linkBtn" class="ghost" href="#" target="_blank" style="display:inline-block; text-decoration:none; padding:10px 14px; border-radius:10px; border:1px solid var(--border);">Open shareable link</a>
-        <button class="ghost" id="copyEmailBtn" title="Copy email text for manual paste">Copy email text</button>
-        <button class="ghost" id="copyAddrsBtn" title="Copy email addresses">Copy email addresses</button>
-        <button class="ghost" id="copyBtn" title="Copy a plain-text summary (optional)">Copy summary</button>
+        <button class="primary" id="emailBtn">Email my councillor &amp; mayor</button>
+        <button class="ghost" id="pngBtn">Download image (PNG)</button>
+        <button class="ghost" id="pdfBtn">Download PDF</button>
+        <a id="linkBtn" class="ghost" href="#" target="_blank">Open shareable link</a>
+        <button class="ghost" id="copyEmailBtn">Copy email text</button>
+        <button class="ghost" id="copyAddrsBtn">Copy email addresses</button>
+        <button class="ghost" id="copyBtn">Copy summary</button>
       </div>
-
-      <!-- (3) Preface before Councillor area -->
-      <p style="margin-top:10px;"><strong>You can send an email now to your Councillor, Mayor and the Arcadia office.</strong></p>
-
+      <p><strong>You can send an email now to your Councillor, Mayor and the Arcadia office.</strong></p>
       <div class="contact">
-        <div class="row">
-          <span class="label">Councillor:</span>
-          <span id="cName" class="pill">—</span>
-          <span id="cEmail" class="pill address">—</span>
-        </div>
-        <div class="row">
-          <span class="label">Mayor:</span>
-          <span id="mName" class="pill">Clinton Sharpe</span>
-          <span id="mEmail" class="pill address">clinton.sharpe@arcadianb.ca</span>
-        </div>
-        <div class="row">
-          <span class="label">Queries CC list:</span>
-          <span id="ccList" class="pill address">info@arcadianb.ca, Karrie.Bedford@arcadianb.ca, Jessica.Mcgarity@arcadianb.ca</span>
-        </div>
-        <p class="muted">Tip: After clicking “Download image (PNG)”, attach the image in your email app. Some devices can also paste images directly into the email body.</p>
+        <div class="row"><span class="label">Councillor:</span><span id="cName" class="pill">—</span><span id="cEmail" class="pill address">—</span></div>
+        <div class="row"><span class="label">Mayor:</span><span id="mName" class="pill">Clinton Sharpe</span><span id="mEmail" class="pill address">clinton.sharpe@arcadianb.ca</span></div>
+        <div class="row"><span class="label">Queries CC list:</span><span id="ccList" class="pill address">info@arcadianb.ca, Karrie.Bedford@arcadianb.ca, Jessica.Mcgarity@arcadianb.ca</span></div>
       </div>
 
       <table id="resultsTable" aria-label="Breakdown table">
         <thead>
           <tr>
             <th>Budget Category</th>
-            <th class="right">Percent</th>
-            <th style="width:40%">Allocation</th>
+            <th class="right">% (Ward)</th>
+            <th style="width:35%">Allocation (Ward)</th>
             <th class="right">Amount (CAD)</th>
+            <th class="right hidden" id="cmpHeadPct">% (Compare)</th>
+            <th class="hidden" id="cmpHeadBar">Allocation (Compare)</th>
+            <th class="right hidden" id="cmpHeadAmt">Amount (CAD)</th>
+            <th class="right hidden" id="diffHead">Diff (Ward−Compare)</th>
           </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
@@ -176,54 +106,34 @@
             <td class="right" id="totalPct">100%</td>
             <td></td>
             <td class="right" id="totalAmt">—</td>
+            <td class="right hidden" id="cmpTotalPct">—</td>
+            <td class="hidden"></td>
+            <td class="right hidden" id="cmpTotalAmt">—</td>
+            <td class="right hidden" id="diffTotal">—</td>
           </tr>
         </tfoot>
       </table>
 
       <div id="note" class="info hidden" style="margin-top:10px;"></div>
-
-      <div class="footer">
-        ⚠️ Sample percentages included. Replace with your official splits when available. Rounding is distributed so the sum equals your exact bill.
-      </div>
+      <p class="muted">Rounding is distributed so the sum equals your exact bill. If ward percentages don’t sum to 100%, values are normalized.</p>
     </section>
   </div>
 
+  <!-- jsPDF CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    // ---------- Configuration ----------
-    const WARD_DATA = {
-      "Upper Gagetown (Ward 1)": {
-        "Education": 20, "Public Safety": 15, "Infrastructure": 10, "Health": 5,
-        "Parks": 5, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
-        "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
-      },
-      "Gagetown (Ward 2)": {
-        "Education": 18, "Public Safety": 17, "Infrastructure": 9, "Health": 6,
-        "Parks": 6, "Transportation": 12, "Fire Services": 8, "Social Services": 6,
-        "Administration": 5, "Debt Services": 10, "Environmental": 1.5, "Emergency": 1.5
-      },
-      "Hampstead (Ward 3)": {
-        "Education": 22, "Public Safety": 13, "Infrastructure": 11, "Health": 4,
-        "Parks": 4, "Transportation": 9, "Fire Services": 11, "Social Services": 4,
-        "Administration": 6, "Debt Services": 10, "Environmental": 3, "Emergency": 3
-      },
-      "Cambridge (Ward 4)": {
-        "Education": 19, "Public Safety": 16, "Infrastructure": 10, "Health": 5,
-        "Parks": 5, "Transportation": 11, "Fire Services": 9, "Social Services": 5,
-        "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
-      },
-      "Cambridge Narrows (Ward 5)": {
-        "Education": 21, "Public Safety": 14, "Infrastructure": 10, "Health": 5,
-        "Parks": 6, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
-        "Administration": 5, "Debt Services": 10, "Environmental": 2, "Emergency": 2
-      },
-      "Waterborough (Ward 6)": {
-        "Education": 20, "Public Safety": 15, "Infrastructure": 10, "Health": 5,
-        "Parks": 5, "Transportation": 10, "Fire Services": 10, "Social Services": 5,
-        "Administration": 5, "Debt Services": 10, "Environmental": 2.5, "Emergency": 2.5
-      }
-    };
+    let WARD_DATA = {};
+    let lastMergedWard=null, lastTotalCents=0, lastWardName='', lastMergedCmp=null, lastCmpName='';
 
-    // Contacts
+    const wardSel=document.getElementById('ward'), compareSel=document.getElementById('compareWard'), amtInput=document.getElementById('amount');
+    const calcBtn=document.getElementById('calcBtn'), resetBtn=document.getElementById('resetBtn');
+    const out=document.getElementById('outCard'), msg=document.getElementById('msg'), note=document.getElementById('note');
+    const resultsBody=document.getElementById('resultsBody'), totalPct=document.getElementById('totalPct'), totalAmt=document.getElementById('totalAmt');
+    const cmpHeadPct=document.getElementById('cmpHeadPct'), cmpHeadBar=document.getElementById('cmpHeadBar'), cmpHeadAmt=document.getElementById('cmpHeadAmt'), diffHead=document.getElementById('diffHead');
+    const cmpTotalPct=document.getElementById('cmpTotalPct'), cmpTotalAmt=document.getElementById('cmpTotalAmt'), diffTotal=document.getElementById('diffTotal');
+
+    const shareBtn=document.getElementById('shareBtn'), linkBtn=document.getElementById('linkBtn'), emailBtn=document.getElementById('emailBtn'), copyEmailBtn=document.getElementById('copyEmailBtn'), copyAddrsBtn=document.getElementById('copyAddrsBtn'), copyBtn=document.getElementById('copyBtn'), pngBtn=document.getElementById('pngBtn'), pdfBtn=document.getElementById('pdfBtn');
+
     const CONTACTS = {
       "Upper Gagetown (Ward 1)": { name: "Tammy Gordon", email: "tammy.gordon@arcadianb.ca" },
       "Gagetown (Ward 2)": { name: "Paul Mennier", email: "paul.mennier@arcadianb.ca" },
@@ -233,439 +143,286 @@
       "Waterborough (Ward 6)": { name: "Paula Gahan-McGee", email: "Paula.gahan-magee@arcadianb.ca" }
     };
     const MAYOR = { name: "Clinton Sharpe", email: "clinton.sharpe@arcadianb.ca" };
-    const QUERY_CC = ["info@arcadianb.ca", "Karrie.Bedford@arcadianb.ca", "Jessica.Mcgarity@arcadianb.ca"];
+    const QUERY_CC = ["info@arcadianb.ca","Karrie.Bedford@arcadianb.ca","Jessica.Mcgarity@arcadianb.ca"];
 
-    // Back-compat for old links
-    const LEGACY_WARD_ALIASES = {
-      "Ward 1": "Upper Gagetown (Ward 1)",
-      "Ward 2": "Gagetown (Ward 2)",
-      "Ward 3": "Hampstead (Ward 3)",
-      "Ward 4": "Cambridge (Ward 4)",
-      "Ward 5": "Cambridge Narrows (Ward 5)",
-      "Ward 6": "Waterborough (Ward 6)"
-    };
+    function showMsg(text,isError=false,clear=false){ if(clear||!text){ msg.classList.add('hidden'); msg.textContent=''; return; } msg.textContent=text; msg.className=(isError?'warn':'info'); }
+    const fmtMoney=c=>new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format((c||0)/100);
+    function parseAmount(s){ if(typeof s!=='string') return 0; s=s.trim().replace(/[^\d.,-]/g,''); if(s.includes(',')&&s.includes('.')) s=s.replace(/,/g,''); else if(s.includes(',')&&!s.includes('.')) s=s.replace(',', '.'); const n=Number(s); return isFinite(n)?Math.max(0,Math.round(n*100)):0; }
 
-    const LOCALE = 'en-CA';
-    const CURRENCY = 'CAD';
-
-    // ---------- Utilities ----------
-    const $ = (sel) => document.querySelector(sel);
-    const fmtMoney = (cents) =>
-      new Intl.NumberFormat(LOCALE, { style:'currency', currency: CURRENCY, currencyDisplay:'symbol' })
-        .format((cents||0)/100);
-
-    const parseAmount = (s) => {
-      if (typeof s !== 'string') return 0;
-      s = s.trim().replace(/[^\d.,-]/g,'');            // strip $ and spaces
-      if (s.includes(',') && s.includes('.')) s = s.replace(/,/g,'');   // 1,234.56
-      else if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.'); // 1234,56
-      const num = Number(s);
-      return isFinite(num) ? Math.max(0, Math.round(num * 100)) : 0;
-    };
-
-    function normalizePercents(obj){
-      const entries = Object.entries(obj);
-      const sum = entries.reduce((t,[,p]) => t + Number(p), 0);
-      if (sum === 0) return entries.map(([k]) => [k, 0]);
-      return entries.map(([k,p]) => [k, (Number(p) / sum) * 100]);
+    async function loadRates(){
+      try{
+        const res=await fetch('ward_rates_2025.json',{cache:'no-store'});
+        if(!res.ok) throw new Error('missing JSON');
+        WARD_DATA=await res.json();
+        const wards=Object.keys(WARD_DATA);
+        wardSel.innerHTML=''; compareSel.innerHTML="<option value=''>— no comparison —</option>";
+        wards.forEach(w=>{ const o=document.createElement('option'); o.textContent=w; wardSel.appendChild(o);
+                           const o2=document.createElement('option'); o2.value=w; o2.textContent=w; compareSel.appendChild(o2); });
+        // deep link
+        const url=new URL(location.href);
+        const qWard=url.searchParams.get('ward'); const qAmt=url.searchParams.get('amount'); const qCmp=url.searchParams.get('compare');
+        if(qWard && WARD_DATA[qWard]) wardSel.value=qWard;
+        if(qCmp && WARD_DATA[qCmp]) compareSel.value=qCmp;
+        if(qAmt){ amtInput.value=qAmt; compute(); }
+      }catch(e){ showMsg("Could not load ward_rates_2025.json", true); }
     }
+    window.addEventListener('DOMContentLoaded', loadRates);
 
-    // Distribute rounding so total == bill to the penny
-    function allocateCents(totalCents, percPairs){
-      const raw = percPairs.map(([k,p]) => [k, (totalCents * (p/100))]);
-      const floors = raw.map(([k,v]) => [k, Math.floor(v)]);
-      const remainders = raw.map(([k,v],i) => [k, v - floors[i][1]]);
-      let used = floors.reduce((t,[,c]) => t + c, 0);
-      let need = Math.round(raw.reduce((t,[,v]) => t + v, 0)) - used;
-
-      remainders.sort((a,b) => b[1] - a[1]);
-      const outMap = new Map(floors);
-      for (let i = 0; i < remainders.length && need > 0; i++, need--){
-        const k = remainders[i][0];
-        outMap.set(k, outMap.get(k) + 1);
-      }
-      return Array.from(outMap.entries()); // [[category, cents], ...]
+    function normalizePairs(catObj){
+      const entries=Object.entries(catObj).map(([k,v])=>[k, Number(v.percent||0), String(v.explain||'')]);
+      const sum=entries.reduce((t,[,p])=>t+p,0);
+      if(sum===0) return entries.map(([k])=>[k,0,'']);
+      return entries.map(([k,p,x])=>[k,(p/sum)*100,x]);
     }
-
-    function buildDeepLink(ward, amountCents){
-      const url = new URL(window.location.href);
-      url.searchParams.set('ward', ward);
-      url.searchParams.set('amount', (amountCents/100).toString());
-      url.searchParams.delete('currency');
-      return url.toString();
+    function allocateCents(totalCents, pairs){
+      const raw=pairs.map(([k,p])=>[k,p,totalCents*(p/100)]);
+      const floors=raw.map(([k,p,v])=>[k,p,Math.floor(v)]);
+      const rema=raw.map(([k,p,v],i)=>[k,p,v-floors[i][2]]);
+      let used=floors.reduce((t,[, ,c])=>t+c,0);
+      let need=Math.round(raw.reduce((t,[, ,v])=>t+v,0))-used;
+      rema.sort((a,b)=>b[2]-a[2]);
+      const out=new Map(floors.map(([k,p,c])=>[k,{percent:p,cents:c}]));
+      for(let i=0;i<rema.length && need>0;i++,need--){ const k=rema[i][0]; out.get(k).cents+=1; }
+      return out;
     }
-
-    function buildMailto(toList, ccList, subject, body){
-      const params = new URLSearchParams();
-      if (ccList && ccList.length) params.set('cc', ccList.join(','));
-      params.set('subject', subject);
-      params.set('body', body);
-      return `mailto:${toList.join(',')}?${params.toString()}`;
+    function asSortedRows(map, explainMap){
+      const rows=Array.from(map.entries()).map(([k,obj])=>({category:k, percent:obj.percent, cents:obj.cents, explain:(explainMap[k]?.explain)||''}));
+      rows.sort((a,b)=>b.percent-a.percent); return rows;
     }
+    function buildDeepLink(ward, amount){ const url=new URL(location.href); url.searchParams.set('ward',ward); url.searchParams.set('amount',(amount/100).toString()); const cmp=compareSel.value||''; if(cmp) url.searchParams.set('compare',cmp); else url.searchParams.delete('compare'); return url.toString(); }
+    function buildMailto(to,cc,subject,body){ const qs=new URLSearchParams(); if(cc?.length) qs.set('cc', cc.join(',')); qs.set('subject',subject); qs.set('body',body); return `mailto:${to.join(',')}?${qs.toString()}`; }
 
-    // ---- Canvas export of the visual table to PNG (no external libs) ----
-    function truncateToWidth(ctx, text, maxWidth){
-      if (ctx.measureText(text).width <= maxWidth) return text;
-      let ellipsis = '…', len = text.length;
-      while (len > 0 && ctx.measureText(text.slice(0, len) + ellipsis).width > maxWidth) len--;
-      return text.slice(0, len) + ellipsis;
-    }
+    function compute(){
+      const ward=wardSel.value; const compareWard=compareSel.value||''; const amountCents=parseAmount(amtInput.value);
+      if(!WARD_DATA[ward]){ showMsg('Choose a valid ward.', true); out.classList.add('hidden'); return; }
+      if(!amountCents){ showMsg('Enter a valid bill amount (e.g., 2400).', true); out.classList.add('hidden'); return; }
 
-    async function generateTablePNG(ward, mergedRows, totalCents){
-      const pad = 24;
-      const rowH = 36;
-      const headH = 44;
-      const footH = 48;
+      const cats=WARD_DATA[ward];
+      const pairs=normalizePairs(cats);
+      const sumRaw=Object.values(cats).reduce((t,v)=>t+Number(v.percent||0),0);
+      if(Math.abs(sumRaw-100)>0.001){ note.textContent=`Note: ${ward} percentages sum to ${sumRaw.toFixed(2)}%. Values have been normalized to 100%.`; note.classList.remove('hidden'); } else note.classList.add('hidden');
+      const alloc=allocateCents(amountCents, pairs);
+      const rows=asSortedRows(alloc, cats);
 
-      const colCat = 420;
-      const colPct = 100;
-      const colBar = 340;
-      const colAmt = 160;
-
-      const innerW = colCat + colPct + colBar + colAmt;
-      const width = pad*2 + innerW;
-      const height = pad + headH + (mergedRows.length * rowH) + footH + pad;
-
-      const scale = Math.min(window.devicePixelRatio || 2, 3);
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(width * scale);
-      canvas.height = Math.round(height * scale);
-      const ctx = canvas.getContext('2d');
-      ctx.scale(scale, scale);
-
-      // Background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
-
-      // Fonts
-      const fontMono = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-      const fontSans = 'system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
-
-      // Header row background
-      ctx.fillStyle = '#f9fafb';
-      ctx.fillRect(pad, pad, innerW, headH);
-
-      // Header text
-      ctx.fillStyle = '#111827';
-      ctx.font = '700 16px ' + fontSans;
-      let x = pad, y = pad + 28;
-      ctx.fillText('Budget Category', x, y);
-      x += colCat;
-      ctx.fillText('Percent', x + colPct - ctx.measureText('Percent').width - 8, y);
-      x += colPct;
-      ctx.fillText('Allocation', x + 8, y);
-      x += colBar;
-      ctx.fillText('Amount (CAD)', x + colAmt - ctx.measureText('Amount (CAD)').width - 8, y);
-
-      // Rows
-      let baseY = pad + headH;
-      for (const r of mergedRows){
-        const yMid = baseY + rowH/2;
-        let cx = pad;
-
-        // Category
-        ctx.fillStyle = '#111827';
-        ctx.font = '500 14px ' + fontSans;
-        const cat = truncateToWidth(ctx, r.category, colCat - 8);
-        ctx.fillText(cat, cx + 4, yMid + 5);
-        cx += colCat;
-
-        // Percent
-        ctx.textAlign = 'right';
-        ctx.font = '500 14px ' + fontMono;
-        ctx.fillText(r.percent.toFixed(2) + '%', cx + colPct - 4, yMid + 5);
-        ctx.textAlign = 'left';
-        cx += colPct;
-
-        // Bar
-        const barY = yMid - 6;
-        ctx.fillStyle = '#e5e7eb';
-        ctx.fillRect(cx + 4, barY, colBar - 8, 12);
-        ctx.fillStyle = '#0d6efd';
-        const fillW = Math.max(0, (colBar - 8) * (r.percent / 100));
-        ctx.fillRect(cx + 4, barY, fillW, 12);
-        cx += colBar;
-
-        // Amount
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#111827';
-        ctx.font = '600 14px ' + fontMono;
-        ctx.fillText(new Intl.NumberFormat('en-CA', {style:'currency', currency:'CAD'}).format(r.cents/100), cx + colAmt - 4, yMid + 5);
-        ctx.textAlign = 'left';
-
-        // Row divider
-        ctx.strokeStyle = '#e5e7eb';
-        ctx.beginPath();
-        ctx.moveTo(pad, baseY + rowH);
-        ctx.lineTo(pad + innerW, baseY + rowH);
-        ctx.stroke();
-
-        baseY += rowH;
+      // compare
+      let cmpRows=null, cmpTotal=0;
+      if(compareWard && WARD_DATA[compareWard]){
+        const c2=WARD_DATA[compareWard]; const p2=normalizePairs(c2); const a2=allocateCents(amountCents, p2);
+        cmpRows=asSortedRows(a2, c2); cmpTotal=Array.from(a2.values()).reduce((t,o)=>t+o.cents,0);
       }
 
-      // Footer (Total)
-      ctx.fillStyle = '#111827';
-      ctx.font = '700 14px ' + fontSans;
-      ctx.fillText('This is my Property Tax total', pad + 4, baseY + 30);
+      // render table
+      resultsBody.innerHTML='';
+      const lookupCmp = cmpRows ? Object.fromEntries(cmpRows.map(r=>[r.category,r])) : {};
+      rows.forEach(r=>{
+        const tr=document.createElement('tr');
 
-      ctx.textAlign = 'right';
-      ctx.font = '700 14px ' + fontMono;
-      ctx.fillText(new Intl.NumberFormat('en-CA', {style:'currency', currency:'CAD'}).format(totalCents/100), pad + innerW - 4, baseY + 30);
-      ctx.textAlign = 'left';
+        const tdCat=document.createElement('td');
+        tdCat.innerHTML = `<div><strong>${r.category}</strong></div><div class="muted">${r.explain||''}</div>`;
 
-      // Outer border
-      ctx.strokeStyle = '#e5e7eb';
-      ctx.strokeRect(pad, pad, innerW, headH + (mergedRows.length * rowH) + footH);
+        const tdPct=document.createElement('td'); tdPct.className='right'; tdPct.textContent=`${r.percent.toFixed(2)}%`;
 
-      return new Promise(resolve => canvas.toBlob(blob => resolve({blob, canvas}), 'image/png'));
-    }
+        const tdBar=document.createElement('td'); const bar=document.createElement('div'); bar.className='bar';
+        const fill=document.createElement('span'); fill.style.width=`${r.percent.toFixed(6)}%`; bar.appendChild(fill); tdBar.appendChild(bar);
 
-    function downloadBlob(blob, filename){
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    }
-
-    // ---------- DOM & Events ----------
-    const wardSel = $('#ward');
-    const amtInput = $('#amount');
-    const calcBtn = $('#calcBtn');
-    const resetBtn = $('#resetBtn');
-
-    const msg = $('#msg');
-    const out = $('#outCard');
-    const note = $('#note');
-    const totalPct = $('#totalPct');
-    const totalAmt = $('#totalAmt');
-    const resultsBody = $('#resultsBody');
-
-    const copyBtn = $('#copyBtn');
-    const shareBtn= $('#shareBtn');
-    const linkBtn = $('#linkBtn');
-    const emailBtn = $('#emailBtn');
-    const copyEmailBtn = $('#copyEmailBtn');
-    const copyAddrsBtn = $('#copyAddrsBtn');
-    const pngBtn = $('#pngBtn');
-
-    const cName = $('#cName');
-    const cEmail = $('#cEmail');
-    const mName = $('#mName');
-    const mEmail = $('#mEmail');
-    const ccListEl = $('#ccList');
-
-    let lastMergedForImage = null;
-    let lastTotalCents = 0;
-    let lastWardName = '';
-
-    function computeAndRender(){
-      const ward = wardSel.value;
-      const amountCents = parseAmount(amtInput.value);
-
-      if (!WARD_DATA[ward]) {
-        showMsg("Ward not found.", true);
-        out.classList.add('hidden');
-        return;
-      }
-      if (!amountCents){
-        showMsg("Enter a valid bill amount (e.g., 2400).", true);
-        out.classList.add('hidden');
-        return;
-      }
-
-      // Normalize percentages, warn if off 100
-      const percPairsRaw = Object.entries(WARD_DATA[ward]);
-      const normalized = normalizePercents(WARD_DATA[ward]);
-      const sumRaw = percPairsRaw.reduce((t,[,p]) => t + Number(p), 0);
-
-      const off = Math.abs(sumRaw - 100);
-      if (off > 0.001){
-        note.textContent = `Note: Ward percentages sum to ${sumRaw.toFixed(2)}%. Values have been normalized to 100%.`;
-        note.classList.remove('hidden');
-      } else {
-        note.classList.add('hidden');
-      }
-
-      // Allocation with fair rounding
-      const allocated = allocateCents(amountCents, normalized);
-
-      // Merge & sort by percent (desc)
-      const merged = allocated.map(([k,cents]) => {
-        const p = normalized.find(([kk]) => kk===k)?.[1] ?? 0;
-        return { category:k, percent:p, cents };
-      }).sort((a,b) => b.percent - a.percent);
-
-      // Update results table
-      resultsBody.innerHTML = '';
-      for (const row of merged){
-        const tr = document.createElement('tr');
-
-        const tdCat = document.createElement('td');
-        tdCat.textContent = row.category;
-
-        const tdPct = document.createElement('td');
-        tdPct.className = 'right';
-        tdPct.textContent = `${row.percent.toFixed(2)}%`;
-
-        const tdBar = document.createElement('td');
-        const bar = document.createElement('div');
-        bar.className = 'bar';
-        const fill = document.createElement('span');
-        fill.style.width = `${row.percent.toFixed(6)}%`;
-        bar.appendChild(fill);
-        tdBar.appendChild(bar);
-
-        const tdAmt = document.createElement('td');
-        tdAmt.className = 'right';
-        tdAmt.textContent = fmtMoney(row.cents);
+        const tdAmt=document.createElement('td'); tdAmt.className='right'; tdAmt.textContent = fmtMoney(r.cents);
 
         tr.append(tdCat, tdPct, tdBar, tdAmt);
+
+        if (cmpRows){
+          const match=lookupCmp[r.category] || {percent:0,cents:0};
+          const tdPct2=document.createElement('td'); tdPct2.className='right'; tdPct2.textContent=`${match.percent.toFixed(2)}%`;
+          const tdBar2=document.createElement('td'); const bar2=document.createElement('div'); bar2.className='bar';
+          const fill2=document.createElement('span'); fill2.style.width=`${match.percent.toFixed(6)}%`; bar2.appendChild(fill2); tdBar2.appendChild(bar2);
+          const tdAmt2=document.createElement('td'); tdAmt2.className='right'; tdAmt2.textContent=fmtMoney(match.cents);
+          const tdDiff=document.createElement('td'); tdDiff.className='right'; const delta=r.cents-match.cents; tdDiff.textContent=`${delta>=0?'+':''}${fmtMoney(delta)}`;
+          tr.append(tdPct2, tdBar2, tdAmt2, tdDiff);
+        }
         resultsBody.appendChild(tr);
-      }
+      });
 
-      // Totals
-      const totalCents = merged.reduce((t,r) => t + r.cents, 0);
-      totalPct.textContent = "100%";
-      totalAmt.textContent = fmtMoney(totalCents);
+      const total=Array.from(alloc.values()).reduce((t,o)=>t+o.cents,0);
+      totalPct.textContent="100%"; totalAmt.textContent=fmtMoney(total);
 
-      // Contacts UI
-      const ctr = CONTACTS[ward];
-      cName.textContent = ctr?.name || '—';
-      cEmail.textContent = ctr?.email || '—';
-      ccListEl.textContent = QUERY_CC.join(', ');
+      const showCmp=Boolean(cmpRows);
+      [cmpHeadPct,cmpHeadBar,cmpHeadAmt,diffHead,cmpTotalPct,cmpTotalAmt,diffTotal].forEach(el=>el.classList.toggle('hidden', !showCmp));
+      if(showCmp){ cmpTotalPct.textContent="100%"; cmpTotalAmt.textContent=fmtMoney(cmpTotal); diffTotal.textContent=fmtMoney(total-cmpTotal); }
 
-      // Tools & shareables
-      const link = buildDeepLink(ward, amountCents);
-      linkBtn.href = link;
+      // contacts
+      const ctr=CONTACTS[ward]||{}; document.getElementById('cName').textContent=ctr.name||'—'; document.getElementById('cEmail').textContent=ctr.email||'—'; document.getElementById('ccList').textContent=QUERY_CC.join(', ');
 
-      // Email subject + body (no line-by-line figures; image instead)
-      const subject = `Question re 2026 plan — ${ward} property tax breakdown`;
-      const greeting = `Hello ${ctr?.name || "Councillor"}, and ${MAYOR.name},`;
-      const lines = [
-        greeting,
-        "",
-        `My annual property tax bill for ${ward} is ${fmtMoney(amountCents)}.`,
-        "Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?",
-        "",
-        "I've attached an image of the breakdown (12 budget categories) for your reference.",
-        `Shareable link: ${link}`,
-        "",
-        "Thank you,"
-      ];
-      const body = lines.join('\n');
+      // tools
+      const link=buildDeepLink(ward, amountCents); linkBtn.href=link;
+      shareBtn.onclick=()=>{ const u=encodeURIComponent(link); window.open(`https://www.facebook.com/sharer/sharer.php?u=${u}`,'fbshare','width=640,height=600'); };
 
-      emailBtn.onclick = () => {
-        const to = [ctr?.email || '', MAYOR.email].filter(Boolean);
-        const mailto = buildMailto(to, QUERY_CC, subject, body);
-        try { window.location.href = mailto; } catch { window.open(mailto, '_blank'); }
-      };
+      const subject=`Question re 2026 plan — ${ward} property tax breakdown`;
+      const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
+      const lines=[greeting,"",`My annual property tax bill for ${ward} is ${fmtMoney(amountCents)}.`,"Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?","", "I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
+      const body=lines.join('\n');
+      emailBtn.onclick=()=>{ const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean); const qs=new URLSearchParams(); qs.set('cc', QUERY_CC.join(',')); qs.set('subject',subject); qs.set('body',body); const mailto=`mailto:${to.join(',')}?${qs.toString()}`; try{ location.href=mailto; }catch{ window.open(mailto,'_blank'); } };
+      copyEmailBtn.onclick=async()=>{ try{ await navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`); showMsg('Email text copied.', false);}catch{showMsg('Copy failed.', true);} };
+      copyAddrsBtn.onclick=async()=>{ const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean).join(', '); const cc=QUERY_CC.join(', '); try{ await navigator.clipboard.writeText(`To: ${to}\nCc: ${cc}`); showMsg('Email addresses copied.', false);}catch{showMsg('Copy failed.', true);} };
+      copyBtn.onclick=async()=>{ try{ await navigator.clipboard.writeText(rows.map(r=>`${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`).join('\n')); showMsg('Summary copied.', false);}catch{showMsg('Copy failed.', true);} };
 
-      copyEmailBtn.onclick = async () => {
-        try{
-          await navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
-          showMsg("Email text copied to clipboard.", false);
-        }catch{
-          showMsg("Copy failed. You can select and copy manually.", true);
-        }
-      };
+      // Save for export
+      lastMergedWard = rows; lastTotalCents = total; lastWardName = ward; lastMergedCmp = cmpRows; lastCmpName = compareWard;
 
-      copyAddrsBtn.onclick = async () => {
-        const to = [ctr?.email || '', MAYOR.email].filter(Boolean).join(', ');
-        const cc = QUERY_CC.join(', ');
-        const text = `To: ${to}\nCc: ${cc}`;
-        try{
-          await navigator.clipboard.writeText(text);
-          showMsg("Email addresses copied.", false);
-        }catch{
-          showMsg("Copy failed. You can select and copy manually.", true);
-        }
-      };
-
-      shareBtn.onclick = () => {
-        const shareUrl = encodeURIComponent(link);
-        const fb = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
-        window.open(fb, 'fbshare', 'width=640,height=600');
-      };
-
-      // PNG export button
-      pngBtn.onclick = async () => {
-        try{
-          const { blob } = await generateTablePNG(ward, lastMergedForImage || merged, lastTotalCents || totalCents);
-          const fname = `arcadia-tax-breakdown-${ward.replace(/\s+/g,'-').toLowerCase()}.png`;
-          downloadBlob(blob, fname);
-          showMsg("Image downloaded. Attach it to your email before sending.", false);
-        }catch(e){
-          showMsg("Could not generate image on this device.", true);
-        }
-      };
-
-      out.classList.remove('hidden');
-      showMsg("", false, true);
-
-      // Persist for image export
-      lastMergedForImage = merged;
-      lastTotalCents = totalCents;
-      lastWardName = ward;
-
-      // Persist last selections
-      localStorage.setItem('tax:lastWard', ward);
-      localStorage.setItem('tax:lastAmt', amountCents);
-      history.replaceState(null, '', link);
+      out.classList.remove('hidden'); showMsg('',false,true);
+      history.replaceState(null,'',link);
     }
 
-    function showMsg(text, isError=false, clear=false){
-      if (clear || !text){
-        msg.classList.add('hidden');
-        msg.textContent = '';
-        return;
+    calcBtn.addEventListener('click', e=>{ e.preventDefault(); compute(); });
+    resetBtn.addEventListener('click', e=>{ e.preventDefault(); amtInput.value=''; out.classList.add('hidden'); showMsg('',false,true); const url=new URL(location.href); ['ward','amount','compare'].forEach(p=>url.searchParams.delete(p)); history.replaceState(null,'',url.toString()); });
+    amtInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); compute(); } });
+
+    // PNG export (using canvas)
+    function truncate(ctx, text, maxW){ if(ctx.measureText(text).width<=maxW) return text; let e='…', n=text.length; while(n>0 && ctx.measureText(text.slice(0,n)+e).width>maxW) n--; return text.slice(0,n)+e; }
+    async function generateTablePNG(ward, rows, totalCents, compareWard, cmpRows, cmpTotal){
+      const hasCmp=!!(compareWard && cmpRows);
+      const pad=24,rowH=40,headH=48,footH=54;
+      const colCat=360,colPct=100,colBar=260,colAmt=160;
+      const colPct2=hasCmp?100:0,colBar2=hasCmp?260:0,colAmt2=hasCmp?160:0,colDiff=hasCmp?160:0;
+      const innerW=colCat+colPct+colBar+colAmt+colPct2+colBar2+colAmt2+colDiff;
+      const width=pad*2+innerW, height=pad+headH+(rows.length*rowH)+footH+pad;
+      const scale=Math.min(window.devicePixelRatio||2,3);
+      const canvas=document.createElement('canvas'); canvas.width=Math.round(width*scale); canvas.height=Math.round(height*scale);
+      const ctx=canvas.getContext('2d'); ctx.scale(scale,scale);
+      const mono='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; const sans='system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
+
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,width,height);
+      ctx.fillStyle='#f9fafb'; ctx.fillRect(pad,pad,innerW,headH);
+      ctx.fillStyle='#111827'; ctx.font='700 16px '+sans;
+
+      let x=pad,y=pad+30;
+      ctx.fillText('Budget Category', x+4, y); x+=colCat;
+      ctx.fillText('% (Ward)', x+colPct-ctx.measureText('% (Ward)').width-8, y); x+=colPct;
+      ctx.fillText('Allocation (Ward)', x+8, y); x+=colBar;
+      ctx.fillText('Amount (CAD)', x+colAmt-ctx.measureText('Amount (CAD)').width-8, y); x+=colAmt;
+      if (hasCmp){
+        ctx.fillText('% (Compare)', x+colPct2-ctx.measureText('% (Compare)').width-8, y); x+=colPct2;
+        ctx.fillText('Allocation (Compare)', x+8, y); x+=colBar2;
+        ctx.fillText('Amount (CAD)', x+colAmt2-ctx.measureText('Amount (CAD)').width-8, y); x+=colAmt2;
+        ctx.fillText('Diff', x+colDiff-ctx.measureText('Diff').width-8, y);
       }
-      msg.textContent = text;
-      msg.className = (isError ? 'warn' : 'info');
+
+      let cy=pad+headH;
+      rows.forEach(r=>{
+        let cx=pad; const yMid=cy+rowH/2;
+        ctx.fillStyle='#111827'; ctx.font='600 14px '+sans;
+        ctx.fillText(truncate(ctx, r.category, colCat-8), cx+4, yMid-4);
+        if(r.explain){ ctx.fillStyle='#6b7280'; ctx.font='400 12px '+sans; ctx.fillText(truncate(ctx, r.explain, colCat-8), cx+4, yMid+12); }
+        cx+=colCat;
+
+        ctx.fillStyle='#111827'; ctx.textAlign='right'; ctx.font='500 14px '+mono; ctx.fillText(r.percent.toFixed(2)+'%', cx+colPct-4, yMid+5); ctx.textAlign='left'; cx+=colPct;
+
+        ctx.fillStyle='#e5e7eb'; ctx.fillRect(cx+4, yMid-6, colBar-8, 12);
+        ctx.fillStyle='#0d6efd'; ctx.fillRect(cx+4, yMid-6, Math.max(0,(colBar-8)*(r.percent/100)), 12); cx+=colBar;
+
+        ctx.textAlign='right'; ctx.font='600 14px '+mono; ctx.fillStyle='#111827'; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(r.cents/100), cx+colAmt-4, yMid+5); ctx.textAlign='left'; cx+=colAmt;
+
+        if (hasCmp){
+          const match=(cmpRows.find(rr=>rr.category===r.category))||{percent:0,cents:0};
+          ctx.textAlign='right'; ctx.font='500 14px '+mono; ctx.fillText(match.percent.toFixed(2)+'%', cx+colPct2-4, yMid+5); ctx.textAlign='left'; cx+=colPct2;
+          ctx.fillStyle='#e5e7eb'; ctx.fillRect(cx+4, yMid-6, colBar2-8, 12);
+          ctx.fillStyle='#0d6efd'; ctx.fillRect(cx+4, yMid-6, Math.max(0,(colBar2-8)*(match.percent/100)), 12); cx+=colBar2;
+          ctx.textAlign='right'; ctx.font='600 14px '+mono; ctx.fillStyle='#111827'; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(match.cents/100), cx+colAmt2-4, yMid+5); ctx.textAlign='left'; cx+=colAmt2;
+          const delta=r.cents-match.cents; ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillStyle= delta>=0 ? '#14532d' : '#7a2e0e';
+          ctx.fillText((delta>=0?'+':'')+new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(delta/100), cx+colDiff-4, yMid+5); ctx.textAlign='left';
+        }
+        ctx.strokeStyle='#e5e7eb'; ctx.beginPath(); ctx.moveTo(pad, cy+rowH); ctx.lineTo(pad+innerW, cy+rowH); ctx.stroke();
+        cy+=rowH;
+      });
+
+      ctx.fillStyle='#111827'; ctx.font='700 14px '+sans; ctx.fillText('This is my Property Tax total', pad+4, cy+30);
+      ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(totalCents/100), pad+innerW-4, cy+30);
+      if(hasCmp){
+        ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format((cmpTotal||0)/100), pad+innerW-4-(160+260+100+160), cy+30);
+      }
+
+      ctx.strokeStyle='#e5e7eb'; ctx.strokeRect(pad,pad,innerW,headH+(rows.length*rowH)+footH);
+      return new Promise(res=>canvas.toBlob(b=>res({blob:b,canvas}),'image/png'));
     }
+    function downloadBlob(blob, filename){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
 
-    // Event wiring
-    calcBtn.addEventListener('click', (e) => { e.preventDefault(); computeAndRender(); });
-    resetBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      amtInput.value = '';
-      out.classList.add('hidden');
-      showMsg("", false, true);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('ward'); url.searchParams.delete('amount'); url.searchParams.delete('currency');
-      history.replaceState(null, '', url.toString());
-    });
+    pngBtn.onclick=async()=>{
+      if(!lastMergedWard){ alert("Please calculate first."); return; }
+      try{
+        const { blob } = await generateTablePNG(lastWardName, lastMergedWard, lastTotalCents, lastCmpName, lastMergedCmp, 0);
+        const base=`arcadia-tax-breakdown-${lastWardName.replace(/\s+/g,'-').toLowerCase()}`;
+        const fname= lastCmpName ? `${base}-vs-${lastCmpName.replace(/\s+/g,'-').toLowerCase()}.png` : `${base}.png`;
+        downloadBlob(blob, fname);
+        showMsg("Image downloaded. Attach it to your email before sending.", false);
+      }catch{ showMsg("Could not generate image on this device.", true); }
+    };
 
-    // Load from deep link or last selections
-    (function init(){
-      const url = new URL(window.location.href);
-      const qWard = url.searchParams.get('ward');
-      const qAmt = url.searchParams.get('amount');
-      const lastWard = localStorage.getItem('tax:lastWard');
-      const lastAmt  = localStorage.getItem('tax:lastAmt');
+    // PDF export
+    pdfBtn.onclick=async()=>{
+      if(!lastMergedWard){ alert("Please calculate first."); return; }
+      const { jsPDF } = window.jspdf; const doc=new jsPDF({orientation:'portrait', unit:'pt', format:'a4'});
+      const ward=lastWardName; const amountCents=parseAmount(amtInput.value);
+      doc.setFont('helvetica','bold'); doc.setFontSize(16);
+      doc.text("Arcadia Residential Property Tax Breakdown", 40, 50);
+      doc.setFont('helvetica','normal'); doc.setFontSize(12);
+      doc.text(`Ward: ${ward}`, 40, 80);
+      doc.text(`Annual Property Tax Bill: ${fmtMoney(amountCents)}`, 40, 100);
 
-      function resolveWardName(name){
-        if (!name) return null;
-        if (WARD_DATA[name]) return name;
-        if (LEGACY_WARD_ALIASES[name]) return LEGACY_WARD_ALIASES[name];
-        return null;
-      }
+      let y=140;
+      doc.setFont('helvetica','bold'); doc.text("Category",40,y); doc.text("%",250,y); doc.text("Amount (CAD)",350,y);
+      y+=20; doc.setFont('helvetica','normal');
+      lastMergedWard.forEach(r=>{
+        doc.text(r.category,40,y);
+        doc.text(r.percent.toFixed(2)+"%",250,y,{align:'right'});
+        doc.text(fmtMoney(r.cents),430,y,{align:'right'});
+        if(r.explain){ doc.setFontSize(9); doc.text(r.explain,60,y+12); doc.setFontSize(12); y+=20; }
+        y+=20;
+      });
+      y+=10; doc.setFont('helvetica','bold'); doc.text("This is my Property Tax total",40,y);
+      doc.text(fmtMoney(lastTotalCents),430,y,{align:'right'});
+      const fname=`arcadia-tax-breakdown-${ward.replace(/\s+/g,'-').toLowerCase()}.pdf`; doc.save(fname);
+    };
 
-      const fromQuery = resolveWardName(qWard);
-      const fromStorage = resolveWardName(lastWard);
+    // Sharing
+    const linkBtn=document.getElementById('linkBtn'); const shareBtnEl=document.getElementById('shareBtn');
+    function buildDeepLink(ward, amount){ const url=new URL(location.href); url.searchParams.set('ward',ward); url.searchParams.set('amount',(amount/100).toString()); const cmp=compareSel.value||''; if(cmp) url.searchParams.set('compare',cmp); else url.searchParams.delete('compare'); return url.toString(); }
+    shareBtn.onclick=()=>{ if(!lastWardName) return; const link=buildDeepLink(lastWardName, parseAmount(amtInput.value)); const u=encodeURIComponent(link); window.open(`https://www.facebook.com/sharer/sharer.php?u=${u}`,'fbshare','width=640,height=600'); };
 
-      if (fromQuery) wardSel.value = fromQuery;
-      else if (fromStorage) wardSel.value = fromStorage;
+    // Email + copy
+    function buildMailto(to,cc,subject,body){ const qs=new URLSearchParams(); if(cc?.length) qs.set('cc', cc.join(',')); qs.set('subject',subject); qs.set('body',body); return `mailto:${to.join(',')}?${qs.toString()}`; }
+    const copyEmailBtn=document.getElementById('copyEmailBtn'), copyAddrsBtn=document.getElementById('copyAddrsBtn'), copyBtnEl=document.getElementById('copyBtn'), emailBtnEl=document.getElementById('emailBtn');
+    emailBtnEl.onclick=()=>{
+      const ctr=CONTACTS[lastWardName]||{}; const subject=`Question re 2026 plan — ${lastWardName} property tax breakdown`;
+      const link=buildDeepLink(lastWardName, parseAmount(amtInput.value));
+      const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
+      const lines=[greeting,"",`My annual property tax bill for ${lastWardName} is ${fmtMoney(parseAmount(amtInput.value))}.`,"Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?","", "I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
+      const body=lines.join('\n');
+      const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean);
+      const mailto=buildMailto(to, QUERY_CC, subject, body);
+      try{ location.href=mailto; }catch{ window.open(mailto,'_blank'); }
+    };
+    copyEmailBtn.onclick=async()=>{
+      const ctr=CONTACTS[lastWardName]||{}; const subject=`Question re 2026 plan — ${lastWardName} property tax breakdown`;
+      const link=buildDeepLink(lastWardName, parseAmount(amtInput.value));
+      const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
+      const lines=[greeting,"",`My annual property tax bill for ${lastWardName} is ${fmtMoney(parseAmount(amtInput.value))}.`,"Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?","", "I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
+      const bodyText=`Subject: ${subject}\n\n${lines.join('\n')}`;
+      try{ await navigator.clipboard.writeText(bodyText); showMsg('Email text copied.', false);}catch{showMsg('Copy failed.', true);}
+    };
+    copyAddrsBtn.onclick=async()=>{
+      const ctr=CONTACTS[lastWardName]||{}; const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean).join(', ');
+      const cc=QUERY_CC.join(', ');
+      try{ await navigator.clipboard.writeText(`To: ${to}\nCc: ${cc}`); showMsg('Email addresses copied.', false);}catch{showMsg('Copy failed.', true);}
+    };
+    copyBtn.onclick=async()=>{
+      if(!lastMergedWard) return;
+      try{ await navigator.clipboard.writeText(lastMergedWard.map(r=>`${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`).join('\n')); showMsg('Summary copied.', false);}catch{showMsg('Copy failed.', true);}
+    };
 
-      if (qAmt){
-        amtInput.value = qAmt;
-        computeAndRender();
-      } else if (lastAmt){
-        amtInput.value = (Number(lastAmt)/100).toString();
-      }
-    })();
+    function computeWrapper(){ compute(); const link=buildDeepLink(wardSel.value, parseAmount(amtInput.value)); linkBtn.href=link; }
+
+    // Wire buttons
+    calcBtn.addEventListener('click', (e)=>{ e.preventDefault(); computeWrapper(); });
+    resetBtn.addEventListener('click', (e)=>{ e.preventDefault(); amtInput.value=''; out.classList.add('hidden'); showMsg('',false,true); const url=new URL(location.href); ['ward','amount','compare'].forEach(p=>url.searchParams.delete(p)); history.replaceState(null,'',url.toString()); });
+    amtInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); computeWrapper(); } });
   </script>
 </body>
 </html>
