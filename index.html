@@ -382,10 +382,6 @@
     };
 
     // Sharing
-    const linkBtn=document.getElementById('linkBtn'); const shareBtnEl=document.getElementById('shareBtn');
-    function buildDeepLink(ward, amount){ const url=new URL(location.href); url.searchParams.set('ward',ward); url.searchParams.set('amount',(amount/100).toString()); const cmp=compareSel.value||''; if(cmp) url.searchParams.set('compare',cmp); else url.searchParams.delete('compare'); return url.toString(); }
-    shareBtn.onclick=()=>{ if(!lastWardName) return; const link=buildDeepLink(lastWardName, parseAmount(amtInput.value)); const u=encodeURIComponent(link); window.open(`https://www.facebook.com/sharer/sharer.php?u=${u}`,'fbshare','width=640,height=600'); };
-
     // Email + copy
     function buildMailto(to,cc,subject,body){ const qs=new URLSearchParams(); if(cc?.length) qs.set('cc', cc.join(',')); qs.set('subject',subject); qs.set('body',body); return `mailto:${to.join(',')}?${qs.toString()}`; }
     const copyEmailBtn=document.getElementById('copyEmailBtn'), copyAddrsBtn=document.getElementById('copyAddrsBtn'), copyBtnEl=document.getElementById('copyBtn'), emailBtnEl=document.getElementById('emailBtn');
