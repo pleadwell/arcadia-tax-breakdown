@@ -119,7 +119,6 @@
     </section>
   </div>
 
-  <!-- jsPDF CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     let WARD_DATA = {};
@@ -155,6 +154,8 @@
         if(!res.ok) throw new Error('missing JSON');
         WARD_DATA=await res.json();
         const wards=Object.keys(WARD_DATA);
+        console.log('Loaded', wards.length, 'wards', wards);
+        // populate selects
         wardSel.innerHTML=''; compareSel.innerHTML="<option value=''>— no comparison —</option>";
         wards.forEach(w=>{ const o=document.createElement('option'); o.textContent=w; wardSel.appendChild(o);
                            const o2=document.createElement('option'); o2.value=w; o2.textContent=w; compareSel.appendChild(o2); });
@@ -164,7 +165,10 @@
         if(qWard && WARD_DATA[qWard]) wardSel.value=qWard;
         if(qCmp && WARD_DATA[qCmp]) compareSel.value=qCmp;
         if(qAmt){ amtInput.value=qAmt; compute(); }
-      }catch(e){ showMsg("Could not load ward_rates_2025.json", true); }
+      }catch(e){
+        showMsg('Could not load ward_rates_2025.json. Ensure it sits next to index.html.', true);
+        console.error(e);
+      }
     }
     window.addEventListener('DOMContentLoaded', loadRates);
 
@@ -259,23 +263,26 @@
       const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
       const lines=[greeting,"",`My annual property tax bill for ${ward} is ${fmtMoney(amountCents)}.`,"Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?","", "I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
       const body=lines.join('\n');
+
       emailBtn.onclick=()=>{ const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean); const qs=new URLSearchParams(); qs.set('cc', QUERY_CC.join(',')); qs.set('subject',subject); qs.set('body',body); const mailto=`mailto:${to.join(',')}?${qs.toString()}`; try{ location.href=mailto; }catch{ window.open(mailto,'_blank'); } };
       copyEmailBtn.onclick=async()=>{ try{ await navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`); showMsg('Email text copied.', false);}catch{showMsg('Copy failed.', true);} };
       copyAddrsBtn.onclick=async()=>{ const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean).join(', '); const cc=QUERY_CC.join(', '); try{ await navigator.clipboard.writeText(`To: ${to}\nCc: ${cc}`); showMsg('Email addresses copied.', false);}catch{showMsg('Copy failed.', true);} };
       copyBtn.onclick=async()=>{ try{ await navigator.clipboard.writeText(rows.map(r=>`${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`).join('\n')); showMsg('Summary copied.', false);}catch{showMsg('Copy failed.', true);} };
 
-      // Save for export
-      lastMergedWard = rows; lastTotalCents = total; lastWardName = ward; lastMergedCmp = cmpRows; lastCmpName = compareWard;
+      // save for export
+      lastMergedWard=rows; lastTotalCents=total; lastWardName=ward; lastMergedCmp=cmpRows; lastCmpName=compareWard;
 
       out.classList.remove('hidden'); showMsg('',false,true);
       history.replaceState(null,'',link);
     }
 
-    calcBtn.addEventListener('click', e=>{ e.preventDefault(); compute(); });
-    resetBtn.addEventListener('click', e=>{ e.preventDefault(); amtInput.value=''; out.classList.add('hidden'); showMsg('',false,true); const url=new URL(location.href); ['ward','amount','compare'].forEach(p=>url.searchParams.delete(p)); history.replaceState(null,'',url.toString()); });
-    amtInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); compute(); } });
+    function computeWrapper(){ compute(); const link=buildDeepLink(wardSel.value, parseAmount(amtInput.value)); linkBtn.href=link; }
 
-    // PNG export (using canvas)
+    calcBtn.addEventListener('click', e=>{ e.preventDefault(); computeWrapper(); });
+    resetBtn.addEventListener('click', e=>{ e.preventDefault(); amtInput.value=''; out.classList.add('hidden'); showMsg('',false,true); const url=new URL(location.href); ['ward','amount','compare'].forEach(p=>url.searchParams.delete(p)); history.replaceState(null,'',url.toString()); });
+    amtInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); computeWrapper(); } });
+
+    // PNG export
     function truncate(ctx, text, maxW){ if(ctx.measureText(text).width<=maxW) return text; let e='…', n=text.length; while(n>0 && ctx.measureText(text.slice(0,n)+e).width>maxW) n--; return text.slice(0,n)+e; }
     async function generateTablePNG(ward, rows, totalCents, compareWard, cmpRows, cmpTotal){
       const hasCmp=!!(compareWard && cmpRows);
@@ -335,13 +342,12 @@
 
       ctx.fillStyle='#111827'; ctx.font='700 14px '+sans; ctx.fillText('This is my Property Tax total', pad+4, cy+30);
       ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(totalCents/100), pad+innerW-4, cy+30);
-      if(hasCmp){
-        ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format((cmpTotal||0)/100), pad+innerW-4-(160+260+100+160), cy+30);
-      }
+      if(hasCmp) ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format((cmpTotal||0)/100), pad+innerW-4-(160+260+100+160), cy+30);
 
       ctx.strokeStyle='#e5e7eb'; ctx.strokeRect(pad,pad,innerW,headH+(rows.length*rowH)+footH);
       return new Promise(res=>canvas.toBlob(b=>res({blob:b,canvas}),'image/png'));
     }
+
     function downloadBlob(blob, filename){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
 
     pngBtn.onclick=async()=>{
@@ -381,44 +387,7 @@
       const fname=`arcadia-tax-breakdown-${ward.replace(/\s+/g,'-').toLowerCase()}.pdf`; doc.save(fname);
     };
 
-    // Sharing
-    // Email + copy
-    function buildMailto(to,cc,subject,body){ const qs=new URLSearchParams(); if(cc?.length) qs.set('cc', cc.join(',')); qs.set('subject',subject); qs.set('body',body); return `mailto:${to.join(',')}?${qs.toString()}`; }
-    const copyEmailBtn=document.getElementById('copyEmailBtn'), copyAddrsBtn=document.getElementById('copyAddrsBtn'), copyBtnEl=document.getElementById('copyBtn'), emailBtnEl=document.getElementById('emailBtn');
-    emailBtnEl.onclick=()=>{
-      const ctr=CONTACTS[lastWardName]||{}; const subject=`Question re 2026 plan — ${lastWardName} property tax breakdown`;
-      const link=buildDeepLink(lastWardName, parseAmount(amtInput.value));
-      const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
-      const lines=[greeting,"",`My annual property tax bill for ${lastWardName} is ${fmtMoney(parseAmount(amtInput.value))}.`,"Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?","", "I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
-      const body=lines.join('\n');
-      const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean);
-      const mailto=buildMailto(to, QUERY_CC, subject, body);
-      try{ location.href=mailto; }catch{ window.open(mailto,'_blank'); }
-    };
-    copyEmailBtn.onclick=async()=>{
-      const ctr=CONTACTS[lastWardName]||{}; const subject=`Question re 2026 plan — ${lastWardName} property tax breakdown`;
-      const link=buildDeepLink(lastWardName, parseAmount(amtInput.value));
-      const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
-      const lines=[greeting,"",`My annual property tax bill for ${lastWardName} is ${fmtMoney(parseAmount(amtInput.value))}.`,"Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?","", "I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
-      const bodyText=`Subject: ${subject}\n\n${lines.join('\n')}`;
-      try{ await navigator.clipboard.writeText(bodyText); showMsg('Email text copied.', false);}catch{showMsg('Copy failed.', true);}
-    };
-    copyAddrsBtn.onclick=async()=>{
-      const ctr=CONTACTS[lastWardName]||{}; const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean).join(', ');
-      const cc=QUERY_CC.join(', ');
-      try{ await navigator.clipboard.writeText(`To: ${to}\nCc: ${cc}`); showMsg('Email addresses copied.', false);}catch{showMsg('Copy failed.', true);}
-    };
-    copyBtn.onclick=async()=>{
-      if(!lastMergedWard) return;
-      try{ await navigator.clipboard.writeText(lastMergedWard.map(r=>`${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`).join('\n')); showMsg('Summary copied.', false);}catch{showMsg('Copy failed.', true);}
-    };
-
     function computeWrapper(){ compute(); const link=buildDeepLink(wardSel.value, parseAmount(amtInput.value)); linkBtn.href=link; }
-
-    // Wire buttons
-    calcBtn.addEventListener('click', (e)=>{ e.preventDefault(); computeWrapper(); });
-    resetBtn.addEventListener('click', (e)=>{ e.preventDefault(); amtInput.value=''; out.classList.add('hidden'); showMsg('',false,true); const url=new URL(location.href); ['ward','amount','compare'].forEach(p=>url.searchParams.delete(p)); history.replaceState(null,'',url.toString()); });
-    amtInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); computeWrapper(); } });
   </script>
 </body>
 </html>
