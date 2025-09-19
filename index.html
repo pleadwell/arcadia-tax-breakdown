@@ -758,6 +758,57 @@
       const emailBtn = document.getElementById("emailBtn");
       const moreBtn = document.getElementById("moreBtn");
       const moreMenu = document.getElementById("moreMenu");
+      /* --- More… menu (accessible) --- */
+      const menuItems = () =>
+        Array.from(
+          moreMenu.querySelectorAll('[role="menuitem"], a[role="menuitem"]')
+        );
+
+      function openMenu() {
+        moreMenu.classList.add("show");
+        moreBtn.setAttribute("aria-expanded", "true");
+        (menuItems()[0] || moreBtn).focus();
+        document.addEventListener("keydown", onMenuKey);
+      }
+      function closeMenu() {
+        moreMenu.classList.remove("show");
+        moreBtn.setAttribute("aria-expanded", "false");
+        document.removeEventListener("keydown", onMenuKey);
+      }
+      function onMenuKey(e) {
+        const items = menuItems();
+        const i = items.indexOf(document.activeElement);
+        if (e.key === "Escape") {
+          e.preventDefault();
+          closeMenu();
+          moreBtn.focus();
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          (items[i + 1] || items[0]).focus();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          (items[i - 1] || items.at(-1)).focus();
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          items[0]?.focus();
+        } else if (e.key === "End") {
+          e.preventDefault();
+          items.at(-1)?.focus();
+        }
+      }
+      moreBtn.addEventListener("click", () =>
+        moreMenu.classList.contains("show") ? closeMenu() : openMenu()
+      );
+      moreBtn.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+          e.preventDefault();
+          openMenu();
+        }
+      });
+      document.addEventListener("click", (e) => {
+        if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu();
+      });
+
       const pngItem = document.getElementById("pngItem");
       const pdfItem = document.getElementById("pdfItem");
       const linkItem = document.getElementById("linkItem");
