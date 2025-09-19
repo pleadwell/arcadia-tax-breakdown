@@ -461,7 +461,8 @@
         .menu-wrap,
         #moreBtn,
         #densityBtn,
-        #helpBtn {
+        #helpBtn,
+        #paletteSel {
           display: none !important;
         }
         .card {
@@ -620,6 +621,14 @@
           >
             Compact view
           </button>
+
+          <!-- NEW: Colours dropdown -->
+          <select id="paletteSel" class="density-btn" title="Colour scheme">
+            <option value="civic">Colours: Civic</option>
+            <option value="colorblind">Colours: Color-blind safe</option>
+            <option value="auto">Colours: Auto (distinct)</option>
+          </select>
+
           <button class="density-btn" id="helpBtn" title="Help">Help</button>
         </div>
 
@@ -717,1162 +726,582 @@
 
     <script>
       /* ===== Base path (set to '/' or your subfolder like '/arcadia-tax-breakdown/') ===== */
-      const APP_BASE_PATH = "/";
+      const APP_BASE_PATH = '/';
       const ANALYTICS_ENDPOINT = null;
 
       let WARD_DATA = {};
-      let lastMergedWard = null,
-        lastTotalCents = 0,
-        lastWardName = "";
-      let lastMergedCmp = null,
-        lastCmpName = "",
-        lastCmpTotal = 0;
-      let sortMode = localStorage.getItem("tax:sort") || "percent";
+      let lastMergedWard=null, lastTotalCents=0, lastWardName='';
+      let lastMergedCmp=null, lastCmpName='', lastCmpTotal=0;
+      let sortMode = localStorage.getItem('tax:sort') || 'percent';
 
-      const wardSel = document.getElementById("ward");
-      const compareSel = document.getElementById("compareWard");
-      const amtInput = document.getElementById("amount");
-      const calcBtn = document.getElementById("calcBtn");
-      const resetBtn = document.getElementById("resetBtn");
+      const wardSel = document.getElementById('ward');
+      const compareSel = document.getElementById('compareWard');
+      const amtInput = document.getElementById('amount');
+      const calcBtn = document.getElementById('calcBtn');
+      const resetBtn = document.getElementById('resetBtn');
 
-      const out = document.getElementById("outCard");
-      const msg = document.getElementById("msg");
-      const note = document.getElementById("note");
-      const updatedStamp = document.getElementById("updatedStamp");
-      const loadingSkel = document.getElementById("loadingSkel");
+      const out = document.getElementById('outCard');
+      const msg = document.getElementById('msg');
+      const note = document.getElementById('note');
+      const updatedStamp = document.getElementById('updatedStamp');
+      const loadingSkel = document.getElementById('loadingSkel');
 
-      const singleTitle = document.getElementById("singleTitle");
-      const singleWrap = document.getElementById("singleWrap");
-      const resultsBody = document.getElementById("resultsBody");
-      const totalPct = document.getElementById("totalPct");
-      const totalAmt = document.getElementById("totalAmt");
+      const singleTitle = document.getElementById('singleTitle');
+      const singleWrap = document.getElementById('singleWrap');
+      const resultsBody = document.getElementById('resultsBody');
+      const totalPct = document.getElementById('totalPct');
+      const totalAmt = document.getElementById('totalAmt');
 
-      const wardHeadPct = document.getElementById("wardHeadPct");
-      const wardHeadBar = document.getElementById("wardHeadBar");
-      const wardHeadAmt = document.getElementById("wardHeadAmt");
+      const wardHeadPct=document.getElementById('wardHeadPct');
+      const wardHeadBar=document.getElementById('wardHeadBar');
+      const wardHeadAmt=document.getElementById('wardHeadAmt');
 
-      const compareWrap = document.getElementById("compareWrap");
-      const compareBanner = document.getElementById("compareBanner");
+      const compareWrap = document.getElementById('compareWrap');
+      const compareBanner = document.getElementById('compareBanner');
 
-      const shareBtn = document.getElementById("shareBtn");
-      const emailBtn = document.getElementById("emailBtn");
-      const moreBtn = document.getElementById("moreBtn");
-      const moreMenu = document.getElementById("moreMenu");
-      /* --- More… menu (accessible) --- */
-      const menuItems = () =>
-        Array.from(
-          moreMenu.querySelectorAll('[role="menuitem"], a[role="menuitem"]')
-        );
+      const shareBtn = document.getElementById('shareBtn');
+      const emailBtn = document.getElementById('emailBtn');
+      const moreBtn = document.getElementById('moreBtn');
+      const moreMenu = document.getElementById('moreMenu');
+      const pngItem  = document.getElementById('pngItem');
+      const pdfItem  = document.getElementById('pdfItem');
+      const linkItem = document.getElementById('linkItem');
+      const densityBtn = document.getElementById('densityBtn');
+      const sortBtn = document.getElementById('sortBtn');
+      const helpBtn = document.getElementById('helpBtn');
+      const summaryEl = document.getElementById('summary');
+      const legendEl = document.getElementById('legend');
+      const paletteSel = document.getElementById('paletteSel');
 
-      function openMenu() {
-        moreMenu.classList.add("show");
-        moreBtn.setAttribute("aria-expanded", "true");
-        (menuItems()[0] || moreBtn).focus();
-        document.addEventListener("keydown", onMenuKey);
-      }
-      function closeMenu() {
-        moreMenu.classList.remove("show");
-        moreBtn.setAttribute("aria-expanded", "false");
-        document.removeEventListener("keydown", onMenuKey);
-      }
-      function onMenuKey(e) {
-        const items = menuItems();
-        const i = items.indexOf(document.activeElement);
-        if (e.key === "Escape") {
-          e.preventDefault();
-          closeMenu();
-          moreBtn.focus();
-        } else if (e.key === "ArrowDown") {
-          e.preventDefault();
-          (items[i + 1] || items[0]).focus();
-        } else if (e.key === "ArrowUp") {
-          e.preventDefault();
-          (items[i - 1] || items.at(-1)).focus();
-        } else if (e.key === "Home") {
-          e.preventDefault();
-          items[0]?.focus();
-        } else if (e.key === "End") {
-          e.preventDefault();
-          items.at(-1)?.focus();
-        }
-      }
-      moreBtn.addEventListener("click", () =>
-        moreMenu.classList.contains("show") ? closeMenu() : openMenu()
-      );
-      moreBtn.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
-          e.preventDefault();
-          openMenu();
-        }
-      });
-      document.addEventListener("click", (e) => {
-        if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu();
-      });
+      const cName = document.getElementById('cName');
+      const cEmail = document.getElementById('cEmail');
+      const mEmailEl = document.getElementById('mEmail');
+      const ccListEl = document.getElementById('ccList');
 
-      const pngItem = document.getElementById("pngItem");
-      const pdfItem = document.getElementById("pdfItem");
-      const linkItem = document.getElementById("linkItem");
-      const densityBtn = document.getElementById("densityBtn");
-      const sortBtn = document.getElementById("sortBtn");
-      const helpBtn = document.getElementById("helpBtn");
-      const summaryEl = document.getElementById("summary");
-      const legendEl = document.getElementById("legend");
-
-      const cName = document.getElementById("cName");
-      const cEmail = document.getElementById("cEmail");
-      const mEmailEl = document.getElementById("mEmail");
-      const ccListEl = document.getElementById("ccList");
-
-      const helpOverlay = document.getElementById("helpOverlay");
-      const helpModal = document.getElementById("helpModal");
-      const helpClose = document.getElementById("helpClose");
+      const helpOverlay = document.getElementById('helpOverlay');
+      const helpModal = document.getElementById('helpModal');
+      const helpClose = document.getElementById('helpClose');
       let lastFocus = null;
 
-      const MAYOR = {
-        name: "Clinton Sharpe",
-        email: "clinton.sharpe@arcadianb.ca",
-      };
-      const QUERY_CC = [
-        "info@arcadianb.ca",
-        "Karrie.Bedford@arcadianb.ca",
-        "Jessica.Mcgarity@arcadianb.ca",
-      ];
+      const MAYOR = { name: "Clinton Sharpe", email: "clinton.sharpe@arcadianb.ca" };
+      const QUERY_CC = ["info@arcadianb.ca","Karrie.Bedford@arcadianb.ca","Jessica.Mcgarity@arcadianb.ca"];
 
       const CONTACTS = {
-        "Upper Gagetown (Ward 1)": {
-          name: "Tammy Gordon",
-          email: "tammy.gordon@arcadianb.ca",
-        },
-        "Gagetown (Ward 2)": {
-          name: "Paul Mennier",
-          email: "paul.mennier@arcadianb.ca",
-        },
-        "Hampstead (Ward 3)": {
-          name: "Harry Thomson",
-          email: "harry.thomson@arcadianb.ca",
-        },
-        "Cambridge (Ward 4)": {
-          name: "Deputy Mayor Steven Sharpe",
-          email: "steven.sharpe@arcadianb.ca",
-        },
-        "Cambridge Narrows (Ward 5)": {
-          name: "Sheila Black",
-          email: "Sheila.black@arcadianb.ca",
-        },
-        "Waterborough (Ward 6)": {
-          name: "Paula Gahan-McGee",
-          email: "Paula.gahan-magee@arcadianb.ca",
-        },
+        "Upper Gagetown (Ward 1)": { name: "Tammy Gordon", email: "tammy.gordon@arcadianb.ca" },
+        "Gagetown (Ward 2)": { name: "Paul Mennier", email: "paul.mennier@arcadianb.ca" },
+        "Hampstead (Ward 3)": { name: "Harry Thomson", email: "harry.thomson@arcadianb.ca" },
+        "Cambridge (Ward 4)": { name: "Deputy Mayor Steven Sharpe", email: "steven.sharpe@arcadianb.ca" },
+        "Cambridge Narrows (Ward 5)": { name: "Sheila Black", email: "Sheila.black@arcadianb.ca" },
+        "Waterborough (Ward 6)": { name: "Paula Gahan-McGee", email: "Paula.gahan-magee@arcadianb.ca" }
       };
 
-      const CATEGORY_COLORS = {
-        Education: "#2563eb",
-        "Public Safety": "#16a34a",
-        Infrastructure: "#f59e0b",
-        Health: "#dc2626",
-        Parks: "#9333ea",
-        Transportation: "#0ea5e9",
+      /* ---------- Colour palettes ---------- */
+      const CIVIC_COLORS = {
+        "Education": "#2563eb",
+        "Public Safety": "#0f172a",
+        "Infrastructure": "#f59e0b",
+        "Transportation": "#fb923c",
         "Fire Services": "#ef4444",
+        "Health": "#dc2626",
+        "Parks": "#16a34a",
+        "Environmental": "#22c55e",
         "Social Services": "#14b8a6",
-        Administration: "#8b5cf6",
+        "Administration": "#8b5cf6",
         "Debt Services": "#64748b",
-        Environmental: "#22c55e",
-        Emergency: "#fb7185",
+        "Recreation & Cultural Service": "#0ea5e9"
       };
-      const PATTERN_CATS = new Set(["Fire Services", "Debt Services"]);
-      const fallbackColor = "#0d6efd";
-      const colorFor = (cat) => CATEGORY_COLORS[cat] || fallbackColor;
+      const OI_BASE = ["#000000","#E69F00","#56B4E9","#009E73","#F0E442","#0072B2","#D55E00","#CC79A7"];
+      const OI_EXTRA = ["#6B7280","#9CA3AF","#22C55E","#7C3AED"];
+      const OI12 = [...OI_BASE, ...OI_EXTRA];
 
-      function safe(s) {
-        return String(s ?? "").replace(
-          /[&<>"']/g,
-          (m) =>
-            ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;",
-            }[m])
-        );
+      function mapFromList(categories, list){
+        const m = {}; categories.forEach((cat,i)=> m[cat] = list[i % list.length]); return m;
       }
-      function showMsg(text, isError = false, clear = false) {
-        if (clear || !text) {
-          msg.classList.add("hidden");
-          msg.textContent = "";
-          return;
+      function autoPalette(categories, seedHue = 218){
+        const m = {}; let h = seedHue;
+        categories.forEach(cat=>{ h=(h+137.508)%360; m[cat]=`hsl(${h.toFixed(1)} 66% 52%)`; });
+        return m;
+      }
+      let CATEGORY_COLORS = { ...CIVIC_COLORS };
+      function colorFor(category){
+        return CATEGORY_COLORS[category] || "#0d6efd";
+      }
+      function applyPalette(name, {silent=false}={}){
+        const cats = Object.keys(WARD_DATA?.[wardSel.value] || {});
+        let map;
+        if (name === "colorblind"){
+          map = mapFromList(cats, OI12);
+        } else if (name === "auto"){
+          const hashedSeed = cats.length ? Math.abs(([...cats[0]].reduce((a,c)=>((a<<5)-a + c.charCodeAt(0))|0,0)) % 360) : 218;
+          map = autoPalette(cats, hashedSeed);
+        } else {
+          map = { ...autoPalette(cats, 218), ...CIVIC_COLORS }; // civic default, auto-fill any missing
         }
-        msg.textContent = text;
-        msg.className = isError ? "warn" : "info";
-        msg.classList.remove("hidden");
+        CATEGORY_COLORS = map;
+        localStorage.setItem("tax:palette", name);
+        if (!silent){
+          // Only re-render if we already have a valid amount
+          if (parseAmount(amtInput.value) > 0 && WARD_DATA[wardSel.value]) compute();
+        }
       }
-      function showToast(text) {
-        const t = document.getElementById("toast");
+
+      const PATTERN_CATS = new Set(["Fire Services","Debt Services"]);
+      const fallbackColor = "#0d6efd";
+
+      function safe(s){
+        return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      }
+      function showMsg(text,isError=false,clear=false){
+        if(clear||!text){ msg.classList.add('hidden'); msg.textContent=''; return; }
+        msg.textContent=text; msg.className=(isError?'warn':'info'); msg.classList.remove('hidden');
+      }
+      function showToast(text){
+        const t = document.getElementById('toast');
         if (!t) return;
         t.textContent = text;
-        t.classList.add("show");
+        t.classList.add('show');
         clearTimeout(showToast._tid);
-        showToast._tid = setTimeout(() => t.classList.remove("show"), 1800);
+        showToast._tid = setTimeout(() => t.classList.remove('show'), 1800);
       }
-      const fmtMoney = (c) =>
-        new Intl.NumberFormat("en-CA", {
-          style: "currency",
-          currency: "CAD",
-        }).format((c || 0) / 100);
-      function parseAmount(s) {
-        if (typeof s !== "string") return 0;
-        s = s.trim().replace(/[^\d.,-]/g, "");
-        if (s.includes(",") && s.includes(".")) s = s.replace(/,/g, "");
-        else if (s.includes(",") && !s.includes(".")) s = s.replace(",", ".");
-        const n = Number(s);
-        return isFinite(n) ? Math.max(0, Math.round(n * 100)) : 0;
+      const fmtMoney=c=>new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format((c||0)/100);
+      function parseAmount(s){
+        if(typeof s!=='string') return 0;
+        s=s.trim().replace(/[^\d.,-]/g,'');
+        if(s.includes(',') && s.includes('.')) s=s.replace(/,/g,''); else if(s.includes(',') && !s.includes('.')) s=s.replace(',', '.');
+        const n=Number(s); return isFinite(n)?Math.max(0,Math.round(n*100)):0;
       }
-      function formatAmountField() {
+      function formatAmountField(){
         const cents = parseAmount(amtInput.value);
         if (!cents) return;
-        amtInput.value = new Intl.NumberFormat("en-CA", {
-          style: "currency",
-          currency: "CAD",
-        }).format(cents / 100);
+        amtInput.value = new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(cents/100);
       }
 
-      function toNumPercent(x) {
-        if (typeof x === "number") return x;
-        if (typeof x === "string") {
-          let s = x
-            .trim()
-            .replace("%", "")
-            .replace(/[^\d.,-]/g, "");
-          if (s.includes(",") && s.includes(".")) s = s.replace(/,/g, "");
-          else if (s.includes(",") && !s.includes(".")) s = s.replace(",", ".");
+      function toNumPercent(x){
+        if (typeof x === 'number') return x;
+        if (typeof x === 'string'){
+          let s = x.trim().replace('%','').replace(/[^\d.,-]/g,'');
+          if (s.includes(',') && s.includes('.')) s = s.replace(/,/g,'');
+          else if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
           const n = Number(s);
           return Number.isFinite(n) ? n : 0;
         }
         return 0;
       }
-      function pickPercentField(v) {
-        if (v && typeof v === "object") {
-          const keys = [
-            "percent",
-            "Percent",
-            "pct",
-            "Pct",
-            "percentage",
-            "Percentage",
-          ];
-          for (const k of keys) {
-            if (k in v) return toNumPercent(v[k]);
-          }
+      function pickPercentField(v){
+        if (v && typeof v === 'object'){
+          const keys = ['percent','Percent','pct','Pct','percentage','Percentage'];
+          for (const k of keys){ if (k in v) return toNumPercent(v[k]); }
           return 0;
         }
         return toNumPercent(v);
       }
-      function pickExplain(v) {
-        if (v && typeof v === "object") {
-          return String(v.explain ?? v.description ?? v.desc ?? "");
-        }
-        return "";
-      }
-      function normalizePairs(catObj) {
-        const entries = Object.entries(catObj).map(([k, v]) => [
-          k,
-          pickPercentField(v),
-          pickExplain(v),
-        ]);
-        const sum = entries.reduce(
-          (t, [, p]) => t + (Number.isFinite(p) ? p : 0),
-          0
-        );
-        return entries.map(([k, p, x]) => [
-          k,
-          sum > 0 ? (p / sum) * 100 : 0,
-          x,
-        ]);
+      function pickExplain(v){ if (v && typeof v === 'object'){ return String(v.explain ?? v.description ?? v.desc ?? ''); } return ''; }
+      function normalizePairs(catObj){
+        const entries = Object.entries(catObj).map(([k,v]) => [k, pickPercentField(v), pickExplain(v)]);
+        const sum = entries.reduce((t,[,p]) => t + (Number.isFinite(p) ? p : 0), 0);
+        return entries.map(([k,p,x]) => [k, sum > 0 ? (p / sum) * 100 : 0, x]);
       }
 
-      function allocateCents(totalCents, pairs) {
-        const raw = pairs.map(([k, p]) => [k, p, totalCents * (p / 100)]);
-        const floors = raw.map(([k, p, v]) => [k, p, Math.floor(v)]);
-        const rema = raw.map(([k, p, v], i) => [k, p, v - floors[i][2]]);
-        let used = floors.reduce((t, [, , c]) => t + c, 0);
-        let need = Math.round(raw.reduce((t, [, , v]) => t + v, 0)) - used;
-        rema.sort((a, b) => b[2] - a[2]);
-        const out = new Map(
-          floors.map(([k, p, c]) => [k, { percent: p, cents: c }])
-        );
-        for (let i = 0; i < rema.length && need > 0; i++, need--) {
-          const k = rema[i][0];
-          out.get(k).cents += 1;
-        }
+      function allocateCents(totalCents, pairs){
+        const raw=pairs.map(([k,p])=>[k,p,totalCents*(p/100)]);
+        const floors=raw.map(([k,p,v])=>[k,p,Math.floor(v)]);
+        const rema=raw.map(([k,p,v],i)=>[k,p,v-floors[i][2]]);
+        let used=floors.reduce((t,[, ,c])=>t+c,0);
+        let need=Math.round(raw.reduce((t,[, ,v])=>t+v,0))-used;
+        rema.sort((a,b)=>b[2]-a[2]);
+        const out=new Map(floors.map(([k,p,c])=>[k,{percent:p,cents:c}]));
+        for(let i=0;i<rema.length && need>0;i++,need--){ const k=rema[i][0]; out.get(k).cents+=1; }
         return out;
       }
 
-      function asSortedRows(map, explainMap) {
-        const rows = Array.from(map.entries()).map(([k, obj]) => ({
-          category: k,
-          percent: obj.percent,
-          cents: obj.cents,
-          explain: explainMap[k]?.explain || "",
-        }));
-        rows.sort((a, b) =>
-          sortMode === "percent" ? b.percent - a.percent : b.cents - a.cents
-        );
+      function asSortedRows(map, explainMap){
+        const rows=Array.from(map.entries()).map(([k,obj])=>({category:k, percent:obj.percent, cents:obj.cents, explain:(explainMap[k]?.explain)||''}));
+        rows.sort((a,b)=> sortMode==='percent' ? b.percent-a.percent : b.cents-a.cents);
         return rows;
       }
 
-      function buildDeepLink(ward, amountCents) {
+      function buildDeepLink(ward, amountCents){
         const base = new URL(APP_BASE_PATH, window.location.origin);
-        base.searchParams.set("ward", ward);
-        base.searchParams.set("amount", (amountCents / 100).toString());
-        const cmp = (compareSel.value || "").trim();
-        if (cmp) base.searchParams.set("compare", cmp);
-        else base.searchParams.delete("compare");
+        base.searchParams.set('ward', ward);
+        base.searchParams.set('amount', (amountCents/100).toString());
+        const cmp = (compareSel.value || '').trim();
+        if (cmp) base.searchParams.set('compare', cmp); else base.searchParams.delete('compare');
         return base.toString();
       }
 
-      function buildMailtoEncoded(toList, ccList, subject, body) {
-        const SEP = "; ";
+      function buildMailtoEncoded(toList, ccList, subject, body){
+        const SEP = '; ';
         const to = toList.filter(Boolean).join(SEP);
-        const cc =
-          ccList && ccList.length
-            ? `&cc=${encodeURIComponent(ccList.filter(Boolean).join(SEP))}`
-            : "";
-        return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(
-          subject
-        )}${cc}&body=${encodeURIComponent(body)}`;
+        const cc = (ccList && ccList.length) ? &nbsp;`&cc=${encodeURIComponent(ccList.filter(Boolean).join(SEP))}` : '';
+        return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}${cc}&body=${encodeURIComponent(body)}`;
       }
 
-      function renderTableBody(tbody, rows, diffSet = null) {
-        tbody.innerHTML = "";
-        for (const r of rows) {
-          const tr = document.createElement("tr");
+      function renderTableBody(tbody, rows, diffSet=null){
+        tbody.innerHTML='';
+        for(const r of rows){
+          const tr=document.createElement('tr');
 
-          const tdCat = document.createElement("td");
-          const diffBadge =
-            diffSet && diffSet.has(r.category)
-              ? `<span class="pill" style="margin-left:6px">diff</span>`
-              : "";
-          tdCat.innerHTML = `<div><strong>${safe(
-            r.category
-          )}</strong>${diffBadge}</div><div class="category-explain">${safe(
-            r.explain || ""
-          )}</div>`;
+          const tdCat=document.createElement('td');
+          const diffBadge = diffSet && diffSet.has(r.category) ? `<span class="pill" style="margin-left:6px">diff</span>` : '';
+          tdCat.innerHTML = `<div><strong>${safe(r.category)}</strong>${diffBadge}</div><div class="category-explain">${safe(r.explain||'')}</div>`;
 
-          const tdPct = document.createElement("td");
-          tdPct.className = "right";
-          tdPct.textContent = `${r.percent.toFixed(2)}%`;
+          const tdPct=document.createElement('td'); tdPct.className='right'; tdPct.textContent=`${r.percent.toFixed(2)}%`;
 
-          const tdBar = document.createElement("td");
-          const bar = document.createElement("div");
-          bar.className = "bar";
-          const fill = document.createElement("span");
-          fill.style.width = `${r.percent.toFixed(6)}%`;
-          fill.style.background = colorFor(r.category);
+          const tdBar=document.createElement('td'); const bar=document.createElement('div'); bar.className='bar';
+          const fill=document.createElement('span'); fill.style.width=`${r.percent.toFixed(6)}%`; fill.style.background = colorFor(r.category);
           bar.title = `${r.percent.toFixed(2)}% • ${fmtMoney(r.cents)}`;
-          if (PATTERN_CATS.has(r.category)) bar.classList.add("pattern");
-          bar.appendChild(fill);
-          tdBar.appendChild(bar);
+          if (PATTERN_CATS.has(r.category)) bar.classList.add('pattern');
+          bar.appendChild(fill); tdBar.appendChild(bar);
 
-          const tdAmt = document.createElement("td");
-          tdAmt.className = "right";
-          tdAmt.textContent = fmtMoney(r.cents);
+          const tdAmt=document.createElement('td'); tdAmt.className='right'; tdAmt.textContent=fmtMoney(r.cents);
 
           tr.append(tdCat, tdPct, tdBar, tdAmt);
           tbody.appendChild(tr);
         }
       }
-      function buildCard(wardName, rows, totalCents, diffSet = null) {
-        const card = document.createElement("div");
-        card.className = "card";
+      function buildCard(wardName, rows, totalCents, diffSet=null){
+        const card = document.createElement('div');
+        card.className = 'card';
         card.innerHTML = `
-        <div class="compare-card-title">${safe(wardName)}</div>
-        <div class="table-wrap">
-          <table aria-label="Breakdown table for ${safe(wardName)}">
-            <thead>
-              <tr><th>Budget Category</th><th class="right">%</th><th style="width:35%">Allocation</th><th class="right">Amount (CAD)</th></tr>
-            </thead>
-            <tbody></tbody>
-            <tfoot><tr><td><strong>Total</strong></td><td class="right">100%</td><td></td><td class="right">${fmtMoney(
-              totalCents
-            )}</td></tr></tfoot>
-          </table>
-        </div>`;
-        renderTableBody(card.querySelector("tbody"), rows, diffSet);
+          <div class="compare-card-title">${safe(wardName)}</div>
+          <div class="table-wrap">
+            <table aria-label="Breakdown table for ${safe(wardName)}">
+              <thead>
+                <tr><th>Budget Category</th><th class="right">%</th><th style="width:35%">Allocation</th><th class="right">Amount (CAD)</th></tr>
+              </thead>
+              <tbody></tbody>
+              <tfoot><tr><td><strong>Total</strong></td><td class="right">100%</td><td></td><td class="right">${fmtMoney(totalCents)}</td></tr></tfoot>
+            </table>
+          </div>`;
+        renderTableBody(card.querySelector('tbody'), rows, diffSet);
         return card;
       }
 
-      function track(event, props = {}) {
-        try {
-          console.log("[analytics]", { ts: Date.now(), event, ...props });
-        } catch {}
-      }
-
-      function compute() {
+      function compute(){
         const ward = wardSel.value;
-        const compareWard = compareSel.value || "";
+        const compareWard = compareSel.value || '';
         const amountCents = parseAmount(amtInput.value);
 
-        if (!WARD_DATA[ward]) {
-          showMsg("Choose a valid ward.", true);
-          out.classList.add("hidden");
-          return;
-        }
-        if (!amountCents) {
-          showMsg("Enter a valid bill amount (e.g., 2400).", true);
-          amtInput.classList.add("input-error");
-          amtInput.setAttribute("aria-invalid", "true");
-          amtInput.focus();
-          out.classList.add("hidden");
-          return;
-        } else {
-          amtInput.classList.remove("input-error");
-          amtInput.removeAttribute("aria-invalid");
-        }
+        if(!WARD_DATA[ward]){ showMsg('Choose a valid ward.', true); out.classList.add('hidden'); return; }
+        if(!amountCents){
+          showMsg('Enter a valid bill amount (e.g., 2400).', true);
+          amtInput.classList.add('input-error'); amtInput.setAttribute('aria-invalid','true'); amtInput.focus();
+          out.classList.add('hidden'); return;
+        } else { amtInput.classList.remove('input-error'); amtInput.removeAttribute('aria-invalid'); }
 
         const parts = [`Bill: ${fmtMoney(amountCents)}`, `Ward: ${ward}`];
         if (compareWard) parts.push(`Compare: ${compareWard}`);
-        summaryEl.textContent = parts.join("  •  ");
+        summaryEl.textContent = parts.join('  •  ');
 
-        const cats = WARD_DATA[ward];
-        const pairs = normalizePairs(cats);
-        const sumRaw = Object.entries(cats).reduce(
-          (t, [, v]) => t + pickPercentField(v),
-          0
-        );
-        if (Math.abs(sumRaw - 100) > 0.001) {
-          note.textContent = `Note: ${safe(
-            ward
-          )} percentages sum to ${sumRaw.toFixed(
-            2
-          )}%. Values have been normalized to 100%.`;
-          note.classList.remove("hidden");
-        } else note.classList.add("hidden");
+        const cats=WARD_DATA[ward];
+        const pairs=normalizePairs(cats);
+        const sumRaw=Object.entries(cats).reduce((t,[,v])=>t+pickPercentField(v),0);
+        if(Math.abs(sumRaw-100)>0.001){ note.textContent=`Note: ${safe(ward)} percentages sum to ${sumRaw.toFixed(2)}%. Values have been normalized to 100%.`; note.classList.remove('hidden'); }
+        else note.classList.add('hidden');
 
-        const alloc = allocateCents(amountCents, pairs);
-        const rows = asSortedRows(alloc, cats);
-        const total = Array.from(alloc.values()).reduce(
-          (t, o) => t + o.cents,
-          0
-        );
+        // palette may need categories now
+        const savedPalette = localStorage.getItem('tax:palette') || 'civic';
+        applyPalette(savedPalette, {silent:true});
 
-        let cmpRows = null,
-          cmpTotal = 0,
-          diffSet = null;
-        if (compareWard && WARD_DATA[compareWard]) {
-          const c2 = WARD_DATA[compareWard];
-          const p2 = normalizePairs(c2);
-          const a2 = allocateCents(amountCents, p2);
-          cmpRows = asSortedRows(a2, c2);
-          cmpTotal = Array.from(a2.values()).reduce((t, o) => t + o.cents, 0);
-          const byCat = Object.fromEntries(cmpRows.map((r) => [r.category, r]));
-          const diffs = rows
-            .map((r) => ({
-              cat: r.category,
-              d: Math.abs(r.percent - (byCat[r.category]?.percent || 0)),
-            }))
-            .sort((a, b) => b.d - a.d)
-            .slice(0, 3)
-            .map((x) => x.cat);
+        const alloc=allocateCents(amountCents, pairs);
+        const rows=asSortedRows(alloc, cats);
+        const total=Array.from(alloc.values()).reduce((t,o)=>t+o.cents,0);
+
+        let cmpRows=null, cmpTotal=0, diffSet=null;
+        if(compareWard && WARD_DATA[compareWard]){
+          const c2=WARD_DATA[compareWard]; const p2=normalizePairs(c2); const a2=allocateCents(amountCents, p2);
+          cmpRows=asSortedRows(a2, c2); cmpTotal=Array.from(a2.values()).reduce((t,o)=>t+o.cents,0);
+          const byCat = Object.fromEntries(cmpRows.map(r=>[r.category,r]));
+          const diffs = rows.map(r => ({cat:r.category, d: Math.abs(r.percent - (byCat[r.category]?.percent||0))}))
+                            .sort((a,b)=>b.d-a.d).slice(0,3).map(x=>x.cat);
           diffSet = new Set(diffs);
         }
 
-        const ctr = CONTACTS[ward] || {};
-        cName.textContent = ctr.name || "—";
-        cEmail.innerHTML = ctr.email
-          ? `<a href="mailto:${ctr.email}">${ctr.email}</a>`
-          : "—";
-        mEmailEl.innerHTML = MAYOR.email
-          ? `<a href="mailto:${MAYOR.email}">${MAYOR.email}</a>`
-          : "—";
-        ccListEl.innerHTML = QUERY_CC.map(
-          (e) => `<a href="mailto:${e}">${e}</a>`
-        ).join("; ");
+        const ctr=CONTACTS[ward]||{};
+        cName.textContent  = ctr.name || '—';
+        cEmail.innerHTML   = ctr.email ? `<a href="mailto:${ctr.email}">${ctr.email}</a>` : '—';
+        mEmailEl.innerHTML = MAYOR.email ? `<a href="mailto:${MAYOR.email}">${MAYOR.email}</a>` : '—';
+        ccListEl.innerHTML = QUERY_CC.map(e => `<a href="mailto:${e}">${e}</a>`).join('; ');
 
-        if (cmpRows) {
-          compareBanner.classList.remove("hidden");
+        if (cmpRows){
+          compareBanner.classList.remove('hidden');
           compareBanner.textContent = `Comparing: ${ward} vs ${compareWard}`;
-          singleTitle.classList.add("hidden");
-          singleTitle.textContent = "";
-          singleWrap.classList.add("hidden");
-          compareWrap.classList.remove("hidden");
-          compareWrap.innerHTML = "";
+          singleTitle.classList.add('hidden'); singleTitle.textContent='';
+          singleWrap.classList.add('hidden');
+          compareWrap.classList.remove('hidden'); compareWrap.innerHTML='';
           compareWrap.appendChild(buildCard(ward, rows, total, diffSet));
-          compareWrap.appendChild(
-            buildCard(compareWard, cmpRows, cmpTotal, diffSet)
-          );
+          compareWrap.appendChild(buildCard(compareWard, cmpRows, cmpTotal, diffSet));
         } else {
-          compareBanner.classList.add("hidden");
-          compareWrap.classList.add("hidden");
-          compareWrap.innerHTML = "";
-          singleTitle.textContent = ward;
-          singleTitle.classList.remove("hidden");
-          singleWrap.classList.remove("hidden");
-          wardHeadPct.textContent = "%";
-          wardHeadBar.textContent = "Allocation";
-          wardHeadAmt.textContent = "Amount (CAD)";
+          compareBanner.classList.add('hidden'); compareWrap.classList.add('hidden'); compareWrap.innerHTML='';
+          singleTitle.textContent = ward; singleTitle.classList.remove('hidden');
+          singleWrap.classList.remove('hidden');
+          wardHeadPct.textContent = '%'; wardHeadBar.textContent = 'Allocation'; wardHeadAmt.textContent = 'Amount (CAD)';
           renderTableBody(resultsBody, rows, null);
-          totalPct.textContent = "100%";
-          totalAmt.textContent = fmtMoney(total);
+          totalPct.textContent="100%"; totalAmt.textContent=fmtMoney(total);
         }
 
-        legendEl.innerHTML = "";
-        rows.slice(0, 8).forEach((r) => {
-          const span = document.createElement("span");
-          span.style.display = "inline-flex";
-          span.style.alignItems = "center";
-          span.innerHTML = `<span style="width:10px;height:10px;border-radius:2px;background:${colorFor(
-            r.category
-          )};margin-right:6px;display:inline-block"></span>${safe(r.category)}`;
+        legendEl.innerHTML=''; rows.slice(0,8).forEach(r=>{
+          const span=document.createElement('span'); span.style.display='inline-flex'; span.style.alignItems='center';
+          span.innerHTML=`<span style="width:10px;height:10px;border-radius:2px;background:${colorFor(r.category)};margin-right:6px;display:inline-block"></span>${safe(r.category)}`;
           legendEl.appendChild(span);
         });
 
-        const link = buildDeepLink(ward, amountCents);
-        linkItem.href = link;
-        shareBtn.onclick = () => {
-          const u = encodeURIComponent(link);
-          window.open(
-            `https://www.facebook.com/sharer/sharer.php?u=${u}`,
-            "fbshare",
-            "width=640,height=600"
-          );
-        };
+        const link=buildDeepLink(ward, amountCents); linkItem.href = link;
+        shareBtn.onclick=()=>{ const u=encodeURIComponent(link); window.open(`https://www.facebook.com/sharer/sharer.php?u=${u}`,'fbshare','width=640,height=600'); };
 
-        const subject = `Question re 2026 plan — ${ward} property tax breakdown`;
-        const greeting = `Hello ${
-          ctr.name || "Councillor"
-        }, and Clinton Sharpe,`;
-        const lines = [
-          greeting,
-          "",
-          `My annual property tax bill for ${fmtMoney(amountCents)}.`,
+        const subject=`Question re 2026 plan — ${ward} property tax breakdown`;
+        const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
+        const lines=[greeting,"",`My annual property tax bill for ${fmtMoney(amountCents)}.`,
           "Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?",
-          "",
-          "I've attached an image or PDF of the breakdown for your reference.",
-          `Shareable link: ${link}`,
-          "",
-          "Thank you,",
-        ];
-        const body = lines.join("\n");
+          "","I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
+        const body=lines.join('\n');
 
-        emailBtn.onclick = () => {
-          const to = [ctr.email || "", MAYOR.email].filter(Boolean);
-          const mailto = buildMailtoEncoded(to, QUERY_CC, subject, body);
-          try {
-            location.href = mailto;
-          } catch {
-            window.open(mailto, "_blank");
-          }
-        };
+        emailBtn.onclick=()=>{ const to=[ctr.email||'',MAYOR.email].filter(Boolean); const mailto=buildMailtoEncoded(to, QUERY_CC, subject, body); try{ location.href=mailto; }catch{ window.open(mailto,'_blank'); } };
 
-        lastMergedWard = rows;
-        lastTotalCents = total;
-        lastWardName = ward;
-        lastMergedCmp = cmpRows;
-        lastCmpName = compareWard;
-        lastCmpTotal = cmpTotal || 0;
-        localStorage.setItem("tax:lastWard", ward);
-        localStorage.setItem("tax:lastCompare", compareWard || "");
-        localStorage.setItem("tax:lastAmt", String(amountCents));
+        lastMergedWard=rows; lastTotalCents=total; lastWardName=ward;
+        lastMergedCmp=cmpRows; lastCmpName=compareWard; lastCmpTotal=cmpTotal||0;
+        localStorage.setItem('tax:lastWard', ward);
+        localStorage.setItem('tax:lastCompare', compareWard || '');
+        localStorage.setItem('tax:lastAmt', String(amountCents));
 
         const prepared = new Date().toLocaleString();
-        if (!updatedStamp.classList.contains("hidden"))
-          updatedStamp.textContent += ` • Prepared on ${prepared}`;
-        else {
-          updatedStamp.textContent = `Prepared on ${prepared}`;
-          updatedStamp.classList.remove("hidden");
-        }
+        if (!updatedStamp.classList.contains('hidden')) updatedStamp.textContent += ` • Prepared on ${prepared}`;
+        else { updatedStamp.textContent = `Prepared on ${prepared}`; updatedStamp.classList.remove('hidden'); }
 
-        out.classList.remove("hidden");
-        showMsg("", false, true);
-        out.focus({ preventScroll: false });
-        history.replaceState(null, "", link);
+        out.classList.remove('hidden'); showMsg('',false,true); out.focus({preventScroll:false});
+        history.replaceState(null,'',link);
       }
-      function computeWrapper() {
-        compute();
-        linkItem.href = buildDeepLink(
-          wardSel.value,
-          parseAmount(amtInput.value)
-        );
-      }
+      function computeWrapper(){ compute(); linkItem.href=buildDeepLink(wardSel.value, parseAmount(amtInput.value)); }
 
-      function truncate(ctx, text, maxW) {
-        if (ctx.measureText(text).width <= maxW) return text;
-        let e = "…",
-          n = text.length;
-        while (n > 0 && ctx.measureText(text.slice(0, n) + e).width > maxW) n--;
-        return text.slice(0, n) + e;
-      }
+      function truncate(ctx, text, maxW){ if(ctx.measureText(text).width<=maxW) return text; let e='…', n=text.length; while(n>0 && ctx.measureText(text.slice(0,n)+e).width>maxW) n--; return text.slice(0,n)+e; }
 
-      /* Single-ward PNG */
-      async function generateTablePNG(ward, rows, totalCents) {
-        const pad = 24,
-          rowH = 40,
-          headH = 48,
-          footH = 54;
-        const colCat = 360,
-          colPct = 100,
-          colBar = 260,
-          colAmt = 160;
-        const innerW = colCat + colPct + colBar + colAmt;
-        const width = pad * 2 + innerW,
-          height = pad + headH + rows.length * rowH + footH + pad;
-        const scale = Math.min(window.devicePixelRatio || 2, 3);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(width * scale);
-        canvas.height = Math.round(height * scale);
-        const ctx = canvas.getContext("2d");
-        ctx.scale(scale, scale);
-        const mono = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
-        const sans =
-          "system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+      async function generateTablePNG(ward, rows, totalCents){
+        const pad=24,rowH=40,headH=48,footH=54; const colCat=360,colPct=100,colBar=260,colAmt=160;
+        const innerW=colCat+colPct+colBar+colAmt; const width=pad*2+innerW, height=pad+headH+(rows.length*rowH)+footH+pad;
+        const scale=Math.min(window.devicePixelRatio||2,3);
+        const canvas=document.createElement('canvas'); canvas.width=Math.round(width*scale); canvas.height=Math.round(height*scale);
+        const ctx=canvas.getContext('2d'); ctx.scale(scale,scale);
+        const mono='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; const sans='system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
 
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = "#f9fafb";
-        ctx.fillRect(pad, pad, innerW, headH);
-        ctx.fillStyle = "#111827";
-        ctx.font = "700 16px " + sans;
-        let x = pad,
-          y = pad + 30;
-        ctx.fillText("Budget Category", x + 4, y);
-        x += colCat;
-        ctx.fillText("%", x + colPct - ctx.measureText("%").width - 8, y);
-        x += colPct;
-        ctx.fillText("Allocation", x + 8, y);
-        x += colBar;
-        ctx.fillText(
-          "Amount (CAD)",
-          x + colAmt - ctx.measureText("Amount (CAD)").width - 8,
-          y
-        );
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,width,height);
+        ctx.fillStyle='#f9fafb'; ctx.fillRect(pad,pad,innerW,headH);
+        ctx.fillStyle='#111827'; ctx.font='700 16px '+sans;
+        let x=pad,y=pad+30; ctx.fillText('Budget Category', x+4, y); x+=colCat;
+        ctx.fillText('%', x+colPct-ctx.measureText('%').width-8, y); x+=colPct;
+        ctx.fillText('Allocation', x+8, y); x+=colBar;
+        ctx.fillText('Amount (CAD)', x+colAmt-ctx.measureText('Amount (CAD)').width-8, y);
 
-        let cy = pad + headH;
-        rows.forEach((r) => {
-          let cx = pad,
-            yMid = cy + rowH / 2;
-          ctx.fillStyle = "#111827";
-          ctx.font = "600 14px " + sans;
-          ctx.fillText(truncate(ctx, r.category, colCat - 8), cx + 4, yMid - 4);
-          cx += colCat;
-          ctx.fillStyle = "#111827";
-          ctx.textAlign = "right";
-          ctx.font = "500 14px " + mono;
-          ctx.fillText(r.percent.toFixed(2) + "%", cx + colPct - 4, yMid + 5);
-          ctx.textAlign = "left";
-          cx += colPct;
-          ctx.fillStyle = "#e5e7eb";
-          ctx.fillRect(cx + 4, yMid - 6, colBar - 8, 12);
-          ctx.fillStyle = colorFor(r.category);
-          ctx.fillRect(
-            cx + 4,
-            yMid - 6,
-            Math.max(0, (colBar - 8) * (r.percent / 100)),
-            12
-          );
-          cx += colBar;
-          ctx.textAlign = "right";
-          ctx.font = "600 14px " + mono;
-          ctx.fillStyle = "#111827";
-          ctx.fillText(
-            new Intl.NumberFormat("en-CA", {
-              style: "currency",
-              currency: "CAD",
-            }).format(r.cents / 100),
-            cx + colAmt - 4,
-            yMid + 5
-          );
-          ctx.textAlign = "left";
-          ctx.strokeStyle = "#e5e7eb";
-          ctx.beginPath();
-          ctx.moveTo(pad, cy + rowH);
-          ctx.lineTo(pad + innerW, cy + rowH);
-          ctx.stroke();
-          cy += rowH;
+        let cy=pad+headH;
+        rows.forEach(r=>{ let cx=pad, yMid=cy+rowH/2;
+          ctx.fillStyle='#111827'; ctx.font='600 14px '+sans; ctx.fillText(truncate(ctx, r.category, colCat-8), cx+4, yMid-4); cx+=colCat;
+          ctx.fillStyle='#111827'; ctx.textAlign='right'; ctx.font='500 14px '+mono; ctx.fillText(r.percent.toFixed(2)+'%', cx+colPct-4, yMid+5); ctx.textAlign='left'; cx+=colPct;
+          ctx.fillStyle='#e5e7eb'; ctx.fillRect(cx+4, yMid-6, colBar-8, 12); ctx.fillStyle = colorFor(r.category);
+          ctx.fillRect(cx+4, yMid-6, Math.max(0,(colBar-8)*(r.percent/100)), 12); cx+=colBar;
+          ctx.textAlign='right'; ctx.font='600 14px '+mono; ctx.fillStyle='#111827'; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(r.cents/100), cx+colAmt-4, yMid+5);
+          ctx.textAlign='left'; ctx.strokeStyle='#e5e7eb'; ctx.beginPath(); ctx.moveTo(pad, cy+rowH); ctx.lineTo(pad+innerW, cy+rowH); ctx.stroke(); cy+=rowH;
         });
-        ctx.fillStyle = "#111827";
-        ctx.font = "700 14px " + sans;
-        ctx.fillText("This is my Property Tax total", pad + 4, cy + 30);
-        ctx.textAlign = "right";
-        ctx.font = "700 14px " + mono;
-        ctx.fillText(
-          new Intl.NumberFormat("en-CA", {
-            style: "currency",
-            currency: "CAD",
-          }).format(totalCents / 100),
-          pad + innerW - 4,
-          cy + 30
-        );
-        ctx.strokeStyle = "#e5e7eb";
-        ctx.strokeRect(pad, pad, innerW, headH + rows.length * rowH + footH);
-        return new Promise((res) =>
-          canvas.toBlob((b) => res({ blob: b, canvas }), "image/png")
-        );
+        ctx.fillStyle='#111827'; ctx.font='700 14px '+sans; ctx.fillText('This is my Property Tax total', pad+4, cy+30);
+        ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(totalCents/100), pad+innerW-4, cy+30);
+        ctx.strokeStyle='#e5e7eb'; ctx.strokeRect(pad,pad,innerW,headH+(rows.length*rowH)+footH); return new Promise(res=>canvas.toBlob(b=>res({blob:b,canvas}),'image/png'));
       }
 
-      /* Compare PNG (stacked) */
-      async function generateTablePNGCompare(
-        ward1,
-        rows1,
-        total1,
-        ward2,
-        rows2,
-        total2
-      ) {
-        const pad = 24,
-          rowH = 40,
-          headH = 48,
-          footH = 54,
-          gap = 28;
-        const colCat = 360,
-          colPct = 100,
-          colBar = 260,
-          colAmt = 160;
-        const innerW = colCat + colPct + colBar + colAmt;
-        const width = pad * 2 + innerW;
-        const height =
-          pad +
-          (headH + rows1.length * rowH + footH) +
-          gap +
-          (headH + rows2.length * rowH + footH) +
-          pad;
-        const scale = Math.min(window.devicePixelRatio || 2, 3);
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(width * scale);
-        canvas.height = Math.round(height * scale);
-        const ctx = canvas.getContext("2d");
-        ctx.scale(scale, scale);
-        const mono = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
-        const sans =
-          "system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, width, height);
+      async function generateTablePNGCompare(ward1, rows1, total1, ward2, rows2, total2){
+        const pad=24,rowH=40,headH=48,footH=54,gap=28; const colCat=360,colPct=100,colBar=260,colAmt=160;
+        const innerW=colCat+colPct+colBar+colAmt; const width=pad*2+innerW;
+        const height=pad+(headH+rows1.length*rowH+footH)+gap+(headH+rows2.length*rowH+footH)+pad;
+        const scale=Math.min(window.devicePixelRatio||2,3);
+        const canvas=document.createElement('canvas'); canvas.width=Math.round(width*scale); canvas.height=Math.round(height*scale);
+        const ctx=canvas.getContext('2d'); ctx.scale(scale,scale);
+        const mono='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; const sans='system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,width,height);
 
-        function drawBlock(yStart, ward, rows, totalCents) {
-          ctx.fillStyle = "#f9fafb";
-          ctx.fillRect(pad, yStart, innerW, headH);
-          ctx.fillStyle = "#111827";
-          ctx.font = "700 16px " + sans;
-          let x = pad,
-            y = yStart + 30;
-          ctx.fillText("Budget Category", x + 4, y);
-          x += colCat;
-          ctx.fillText("%", x + colPct - ctx.measureText("%").width - 8, y);
-          x += colPct;
-          ctx.fillText("Allocation", x + 8, y);
-          x += colBar;
-          ctx.fillText(
-            "Amount (CAD)",
-            x + colAmt - ctx.measureText("Amount (CAD)").width - 8,
-            y
-          );
-          ctx.font = "700 16px " + sans;
-          ctx.fillText(ward, pad + 4, yStart - 6);
+        function drawBlock(yStart, ward, rows, totalCents){
+          ctx.fillStyle='#f9fafb'; ctx.fillRect(pad,yStart,innerW,headH);
+          ctx.fillStyle='#111827'; ctx.font='700 16px '+sans;
+          let x=pad,y=yStart+30; ctx.fillText('Budget Category', x+4, y); x+=colCat;
+          ctx.fillText('%', x+colPct-ctx.measureText('%').width-8, y); x+=colPct; ctx.fillText('Allocation', x+8, y); x+=colBar;
+          ctx.fillText('Amount (CAD)', x+colAmt-ctx.measureText('Amount (CAD)').width-8, y);
+          ctx.font='700 16px '+sans; ctx.fillText(ward, pad+4, yStart-6);
 
-          let cy = yStart + headH;
-          rows.forEach((r) => {
-            let cx = pad,
-              yMid = cy + rowH / 2;
-            ctx.fillStyle = "#111827";
-            ctx.font = "600 14px " + sans;
-            ctx.fillText(
-              r.category.length > 40
-                ? r.category.slice(0, 40) + "…"
-                : r.category,
-              cx + 4,
-              yMid - 4
-            );
-            cx += colCat;
-            ctx.fillStyle = "#111827";
-            ctx.textAlign = "right";
-            ctx.font = "500 14px " + mono;
-            ctx.fillText(r.percent.toFixed(2) + "%", cx + colPct - 4, yMid + 5);
-            ctx.textAlign = "left";
-            cx += colPct;
-            ctx.fillStyle = "#e5e7eb";
-            ctx.fillRect(cx + 4, yMid - 6, colBar - 8, 12);
-            ctx.fillStyle = colorFor(r.category);
-            ctx.fillRect(
-              cx + 4,
-              yMid - 6,
-              Math.max(0, (colBar - 8) * (r.percent / 100)),
-              12
-            );
-            cx += colBar;
-            ctx.textAlign = "right";
-            ctx.font = "600 14px " + mono;
-            ctx.fillStyle = "#111827";
-            ctx.fillText(
-              new Intl.NumberFormat("en-CA", {
-                style: "currency",
-                currency: "CAD",
-              }).format(r.cents / 100),
-              cx + colAmt - 4,
-              yMid + 5
-            );
-            ctx.textAlign = "left";
-            ctx.strokeStyle = "#e5e7eb";
-            ctx.beginPath();
-            ctx.moveTo(pad, cy + rowH);
-            ctx.lineTo(pad + innerW, cy + rowH);
-            ctx.stroke();
-            cy += rowH;
+          let cy=yStart+headH;
+          rows.forEach(r=>{ let cx=pad, yMid=cy+rowH/2;
+            ctx.fillStyle='#111827'; ctx.font='600 14px '+sans; ctx.fillText((r.category.length>40?r.category.slice(0,40)+'…':r.category), cx+4, yMid-4); cx+=colCat;
+            ctx.fillStyle='#111827'; ctx.textAlign='right'; ctx.font='500 14px '+mono; ctx.fillText(r.percent.toFixed(2)+'%', cx+colPct-4, yMid+5); ctx.textAlign='left'; cx+=colPct;
+            ctx.fillStyle='#e5e7eb'; ctx.fillRect(cx+4, yMid-6, colBar-8, 12); ctx.fillStyle = colorFor(r.category);
+            ctx.fillRect(cx+4, yMid-6, Math.max(0,(colBar-8)*(r.percent/100)), 12); cx+=colBar;
+            ctx.textAlign='right'; ctx.font='600 14px '+mono; ctx.fillStyle='#111827'; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(r.cents/100), cx+colAmt-4, yMid+5);
+            ctx.textAlign='left'; ctx.strokeStyle='#e5e7eb'; ctx.beginPath(); ctx.moveTo(pad, cy+rowH); ctx.lineTo(pad+innerW, cy+rowH); ctx.stroke(); cy+=rowH;
           });
 
-          ctx.fillStyle = "#111827";
-          ctx.font = "700 14px " + sans;
-          ctx.fillText("This is my Property Tax total", pad + 4, cy + 30);
-          ctx.textAlign = "right";
-          ctx.font = "700 14px " + mono;
-          ctx.fillText(
-            new Intl.NumberFormat("en-CA", {
-              style: "currency",
-              currency: "CAD",
-            }).format(totalCents / 100),
-            pad + innerW - 4,
-            cy + 30
-          );
-          ctx.textAlign = "left";
-          ctx.strokeStyle = "#e5e7eb";
-          ctx.strokeRect(
-            pad,
-            yStart,
-            innerW,
-            headH + rows.length * rowH + footH
-          );
-          return cy + footH;
+          ctx.fillStyle='#111827'; ctx.font='700 14px '+sans; ctx.fillText('This is my Property Tax total', pad+4, cy+30);
+          ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(totalCents/100), pad+innerW-4, cy+30); ctx.textAlign='left';
+          ctx.strokeStyle='#e5e7eb'; ctx.strokeRect(pad,yStart,innerW,headH+rows.length*rowH+footH);
+          return cy+footH;
         }
 
-        const bottom1 = drawBlock(pad + 24, ward1, rows1, total1);
-        drawBlock(bottom1 + gap, ward2, rows2, total2);
+        const bottom1 = drawBlock(pad+24, ward1, rows1, total1);
+        drawBlock(bottom1+gap, ward2, rows2, total2);
 
-        return new Promise((res) =>
-          canvas.toBlob((b) => res({ blob: b, canvas }), "image/png")
-        );
+        return new Promise(res=>canvas.toBlob(b=>res({blob:b,canvas}),'image/png'));
       }
 
-      /* Exports */
-      async function ensureJsPDF() {
+      async function ensureJsPDF(){
         if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
-        await new Promise((ok, err) => {
-          const s = document.createElement("script");
-          s.src =
-            "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-          s.onload = ok;
-          s.onerror = err;
-          document.head.appendChild(s);
-        });
+        await new Promise((ok, err) => { const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'; s.onload=ok; s.onerror=err; document.head.appendChild(s); });
         return window.jspdf.jsPDF;
       }
 
       pngItem.onclick = async () => {
-        if (!lastMergedWard) {
-          alert("Please calculate first.");
-          return;
-        }
-        try {
+        if(!lastMergedWard){ alert("Please calculate first."); return; }
+        try{
           let blobObj;
-          if (lastMergedCmp && lastCmpName) {
-            blobObj = await generateTablePNGCompare(
-              lastWardName,
-              lastMergedWard,
-              lastTotalCents,
-              lastCmpName,
-              lastMergedCmp,
-              lastCmpTotal
-            );
+          if (lastMergedCmp && lastCmpName){
+            blobObj = await generateTablePNGCompare(lastWardName, lastMergedWard, lastTotalCents, lastCmpName, lastMergedCmp, lastCmpTotal);
           } else {
-            blobObj = await generateTablePNG(
-              lastWardName,
-              lastMergedWard,
-              lastTotalCents
-            );
+            blobObj = await generateTablePNG(lastWardName, lastMergedWard, lastTotalCents);
           }
           const { blob } = blobObj;
-          const base = `arcadia-tax-breakdown-${lastWardName
-            .replace(/\s+/g, "-")
-            .toLowerCase()}`;
-          const fname =
-            lastMergedCmp && lastCmpName
-              ? `${base}-vs-${lastCmpName
-                  .replace(/\s+/g, "-")
-                  .toLowerCase()}.png`
-              : `${base}.png`;
-          downloadBlob(blob, fname);
+          const base=`arcadia-tax-breakdown-${lastWardName.replace(/\s+/g,'-').toLowerCase()}`;
+          const fname = (lastMergedCmp && lastCmpName) ? `${base}-vs-${lastCmpName.replace(/\s+/g,'-').toLowerCase()}.png` : `${base}.png`;
+          const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
           showToast("Image downloaded");
-        } catch {
-          showMsg("Could not generate image on this device.", true);
-        }
+        }catch{ showMsg("Could not generate image on this device.", true); }
       };
 
       pdfItem.onclick = async () => {
-        if (!lastMergedWard) {
-          alert("Please calculate first.");
-          return;
-        }
+        if(!lastMergedWard){ alert("Please calculate first."); return; }
         const jsPDF = await ensureJsPDF();
-        const doc = new jsPDF({
-          orientation: "portrait",
-          unit: "pt",
-          format: "a4",
-        });
-        const amountCents = parseAmount(amtInput.value);
+        const doc=new jsPDF({orientation:'portrait', unit:'pt', format:'a4'});
+        const amountCents=parseAmount(amtInput.value);
 
-        function writeOne(ward, rows, totalCents) {
-          let y = 80;
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(16);
-          doc.text("Arcadia Residential Property Tax Breakdown", 40, y);
-          y += 24;
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(12);
-          doc.text(`Ward: ${ward}`, 40, y);
-          y += 18;
-          doc.text(`Annual Property Tax Bill: ${fmtMoney(amountCents)}`, 40, y);
-          y += 24;
-          doc.setFont("helvetica", "bold");
-          doc.text("Category", 40, y);
-          doc.text("%", 250, y);
-          doc.text("Amount (CAD)", 350, y);
-          y += 20;
-          doc.setFont("helvetica", "normal");
-          rows.forEach((r) => {
-            doc.text(r.category, 40, y);
-            doc.text(r.percent.toFixed(2) + "%", 250, y, { align: "right" });
-            doc.text(fmtMoney(r.cents), 430, y, { align: "right" });
-            if (r.explain) {
-              doc.setFontSize(9);
-              doc.text(r.explain, 60, y + 12);
-              doc.setFontSize(12);
-              y += 20;
-            }
-            y += 20;
-            if (y > 760) {
-              doc.addPage();
-              y = 80;
-            }
+        function writeOne(ward, rows, totalCents){
+          let y=80;
+          doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text("Arcadia Residential Property Tax Breakdown", 40, y); y+=24;
+          doc.setFont('helvetica','normal'); doc.setFontSize(12);
+          doc.text(`Ward: ${ward}`, 40, y); y+=18; doc.text(`Annual Property Tax Bill: ${fmtMoney(amountCents)}`, 40, y); y+=24;
+          doc.setFont('helvetica','bold'); doc.text("Category",40,y); doc.text("%",250,y); doc.text("Amount (CAD)",350,y); y+=20;
+          doc.setFont('helvetica','normal');
+          rows.forEach(r=>{ doc.text(r.category,40,y); doc.text(r.percent.toFixed(2)+"%",250,y,{align:'right'}); doc.text(fmtMoney(r.cents),430,y,{align:'right'});
+            if(r.explain){ doc.setFontSize(9); doc.text(r.explain,60,y+12); doc.setFontSize(12); y+=20; }
+            y+=20; if (y > 760){ doc.addPage(); y=80; }
           });
-          y += 10;
-          doc.setFont("helvetica", "bold");
-          doc.text("This is my Property Tax total", 40, y);
-          doc.text(fmtMoney(totalCents), 430, y, { align: "right" });
+          y+=10; doc.setFont('helvetica','bold'); doc.text("This is my Property Tax total",40,y); doc.text(fmtMoney(totalCents),430,y,{align:'right'});
         }
 
         writeOne(lastWardName, lastMergedWard, lastTotalCents);
-        if (lastMergedCmp && lastCmpName) {
-          doc.addPage();
-          writeOne(lastCmpName, lastMergedCmp, lastCmpTotal);
-        }
+        if (lastMergedCmp && lastCmpName){ doc.addPage(); writeOne(lastCmpName, lastMergedCmp, lastCmpTotal); }
 
-        const base = `arcadia-tax-breakdown-${lastWardName
-          .replace(/\s+/g, "-")
-          .toLowerCase()}`;
-        const fname =
-          lastMergedCmp && lastCmpName
-            ? `${base}-vs-${lastCmpName.replace(/\s+/g, "-").toLowerCase()}.pdf`
-            : `${base}.pdf`;
+        const base=`arcadia-tax-breakdown-${lastWardName.replace(/\s+/g,'-').toLowerCase()}`;
+        const fname=(lastMergedCmp && lastCmpName)? `${base}-vs-${lastCmpName.replace(/\s+/g,'-').toLowerCase()}.pdf` : `${base}.pdf`;
         doc.save(fname);
       };
 
-      document.addEventListener("keydown", (e) => {
-        if (out.classList.contains("hidden")) return;
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
-        const k = e.key.toLowerCase();
-        if (k === "e") emailBtn.click();
-        else if (k === "p") pngItem.click();
-        else if (k === "l") linkItem.click();
-      });
+      document.addEventListener('keydown', (e)=>{ if (out.classList.contains('hidden')) return; if (e.ctrlKey||e.metaKey||e.altKey) return; const k=e.key.toLowerCase(); if (k==='e') emailBtn.click(); else if (k==='p') pngItem.click(); else if (k==='l') linkItem.click(); });
 
-      async function openHelp() {
+      async function openHelp(){
         lastFocus = document.activeElement;
-        helpOverlay.classList.add("show");
-        helpModal.classList.add("show");
-        helpOverlay.setAttribute("aria-hidden", "false");
-        const helpBody = document.getElementById("helpBody");
-        helpBody.setAttribute("aria-busy", "true");
-        helpBody.innerHTML = '<p class="muted">Loading…</p>';
-        try {
-          const HELP_URL = new URL(
-            APP_BASE_PATH.replace(/\/?$/, "/") + "help_content.html",
-            window.location.origin
-          );
-          HELP_URL.searchParams.set("v", String(Date.now()).slice(-6));
-          const res = await fetch(HELP_URL.toString(), { cache: "no-store" });
-          if (!res.ok) throw new Error("help not found");
+        helpOverlay.classList.add('show'); helpModal.classList.add('show'); helpOverlay.setAttribute('aria-hidden','false');
+        const helpBody = document.getElementById('helpBody'); helpBody.setAttribute('aria-busy','true'); helpBody.innerHTML = '<p class="muted">Loading…</p>';
+        try{
+          const HELP_URL = new URL(APP_BASE_PATH.replace(/\/?$/,'/') + 'help_content.html', window.location.origin);
+          HELP_URL.searchParams.set('v', String(Date.now()).slice(-6));
+          const res = await fetch(HELP_URL.toString(), {cache:'no-store'});
+          if (!res.ok) throw new Error('help not found');
           const html = await res.text();
-          helpBody.innerHTML =
-            html && html.trim()
-              ? html
-              : '<p class="muted">No help content available.</p>';
-        } catch {
-          helpBody.innerHTML =
-            '<p class="muted">Help content is unavailable right now.</p>';
-        } finally {
-          helpBody.removeAttribute("aria-busy");
-        }
+          helpBody.innerHTML = html && html.trim() ? html : '<p class="muted">No help content available.</p>';
+        }catch{ helpBody.innerHTML = '<p class="muted">Help content is unavailable right now.</p>'; }
+        finally{ helpBody.removeAttribute('aria-busy'); }
         helpClose.focus();
       }
-      function closeHelp() {
-        helpOverlay.classList.remove("show");
-        helpModal.classList.remove("show");
-        helpOverlay.setAttribute("aria-hidden", "true");
-        lastFocus?.focus();
-      }
-      helpBtn.addEventListener("click", openHelp);
-      helpClose.addEventListener("click", closeHelp);
-      helpOverlay.addEventListener("click", closeHelp);
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && helpModal.classList.contains("show"))
-          closeHelp();
-      });
+      function closeHelp(){ helpOverlay.classList.remove('show'); helpModal.classList.remove('show'); helpOverlay.setAttribute('aria-hidden','true'); lastFocus?.focus(); }
+      helpBtn.addEventListener('click', openHelp); helpClose.addEventListener('click', closeHelp); helpOverlay.addEventListener('click', closeHelp);
+      document.addEventListener('keydown', e=>{ if (e.key==='Escape' && helpModal.classList.contains('show')) closeHelp(); });
 
-      function applyDensity(mode) {
-        document.body.classList.toggle("compact", mode === "compact");
-        densityBtn.setAttribute(
-          "aria-pressed",
-          mode === "compact" ? "true" : "false"
-        );
-        densityBtn.textContent =
-          mode === "compact" ? "Cozy view" : "Compact view";
-        localStorage.setItem("tax:density", mode);
+      /* --- More… menu (accessible) --- */
+      const menuItems = () =>
+        Array.from(moreMenu.querySelectorAll('[role="menuitem"], a[role="menuitem"]'));
+      function openMenu(){
+        moreMenu.classList.add('show');
+        moreBtn.setAttribute('aria-expanded','true');
+        (menuItems()[0] || moreBtn).focus();
+        document.addEventListener('keydown', onMenuKey);
       }
-      densityBtn.addEventListener("click", () => {
-        const mode = document.body.classList.contains("compact")
-          ? "cozy"
-          : "compact";
-        applyDensity(mode);
-      });
-
-      function applySort(mode) {
-        sortMode = mode;
-        sortBtn.textContent =
-          sortMode === "percent" ? "Sort by amount" : "Sort by %";
-        sortBtn.setAttribute(
-          "aria-pressed",
-          sortMode === "amount" ? "true" : "false"
-        );
-        localStorage.setItem("tax:sort", sortMode);
-        compute();
+      function closeMenu(){
+        moreMenu.classList.remove('show');
+        moreBtn.setAttribute('aria-expanded','false');
+        document.removeEventListener('keydown', onMenuKey);
       }
-      sortBtn.addEventListener("click", () =>
-        applySort(sortMode === "percent" ? "amount" : "percent")
+      function onMenuKey(e){
+        const items = menuItems();
+        const i = items.indexOf(document.activeElement);
+        if (e.key === 'Escape'){ e.preventDefault(); closeMenu(); moreBtn.focus(); }
+        else if (e.key === 'ArrowDown'){ e.preventDefault(); (items[i+1] || items[0]).focus(); }
+        else if (e.key === 'ArrowUp'){ e.preventDefault(); (items[i-1] || items.at(-1)).focus(); }
+        else if (e.key === 'Home'){ e.preventDefault(); items[0]?.focus(); }
+        else if (e.key === 'End'){ e.preventDefault(); items.at(-1)?.focus(); }
+      }
+      moreBtn.addEventListener('click', () =>
+        moreMenu.classList.contains('show') ? closeMenu() : openMenu()
       );
-
-      function downloadBlob(blob, filename) {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-      }
-
-      calcBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        computeWrapper();
-      });
-      resetBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        amtInput.value = "";
-        out.classList.add("hidden");
-        showMsg("", false, true);
-        const url = new URL(window.location.origin + APP_BASE_PATH);
-        history.replaceState(null, "", url.toString());
-      });
-
-      amtInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          computeWrapper();
+      moreBtn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown'){
+          e.preventDefault(); openMenu();
         }
       });
-      [wardSel, compareSel].forEach((sel) => {
-        sel.addEventListener("change", computeWrapper);
-        sel.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            computeWrapper();
-          }
-        });
-      });
-      amtInput.addEventListener("blur", formatAmountField);
-      amtInput.addEventListener("input", () => {
-        const ok = parseAmount(amtInput.value) > 0;
-        amtInput.classList.toggle(
-          "input-error",
-          !ok && amtInput.value.trim() !== ""
-        );
-        if (ok) msg.classList.add("hidden");
+      document.addEventListener('click', e => {
+        if (!moreMenu.contains(e.target) && e.target !== moreBtn) closeMenu();
       });
 
-      async function loadRates() {
-        try {
-          const dataUrl = new URL(
-            APP_BASE_PATH.replace(/\/?$/, "/") + "ward_rates_2025.json",
-            window.location.origin
-          );
-          const res = await fetch(dataUrl.toString(), { cache: "no-store" });
-          if (!res.ok) throw new Error("missing JSON");
-          WARD_DATA = await res.json();
+      function applyDensity(mode){ document.body.classList.toggle('compact', mode==='compact'); densityBtn.setAttribute('aria-pressed', mode==='compact'?'true':'false'); densityBtn.textContent = mode==='compact' ? 'Cozy view' : 'Compact view'; localStorage.setItem('tax:density', mode); }
+      densityBtn.addEventListener('click', ()=>{ const mode=document.body.classList.contains('compact')?'cozy':'compact'; applyDensity(mode); });
 
-          const updated = WARD_DATA._meta?.updated;
-          if (updated) {
-            updatedStamp.textContent = `Percentages last updated: ${updated}`;
-            updatedStamp.classList.remove("hidden");
-            delete WARD_DATA._meta;
-          }
+      function applySort(mode){ sortMode=mode; sortBtn.textContent = sortMode==='percent'?'Sort by amount':'Sort by %'; sortBtn.setAttribute('aria-pressed', sortMode==='amount'?'true':'false'); localStorage.setItem('tax:sort', sortMode); compute(); }
+      sortBtn.addEventListener('click', ()=> applySort(sortMode==='percent'?'amount':'percent'));
 
-          const wards = Object.keys(WARD_DATA);
-          wardSel.innerHTML = "";
-          compareSel.innerHTML = "<option value=''>— no comparison —</option>";
-          wards.forEach((w) => {
-            const o = document.createElement("option");
-            o.textContent = w;
-            wardSel.appendChild(o);
-            const o2 = document.createElement("option");
-            o2.value = w;
-            o2.textContent = w;
-            compareSel.appendChild(o2);
-          });
+      paletteSel.addEventListener('change', ()=> applyPalette(paletteSel.value));
 
-          const url = new URL(window.location.href);
-          const qWard = url.searchParams.get("ward");
-          const qAmt = url.searchParams.get("amount");
-          const qCmp = url.searchParams.get("compare");
-          const lastWard = localStorage.getItem("tax:lastWard");
-          const lastAmt = localStorage.getItem("tax:lastAmt");
-          const lastCmp = localStorage.getItem("tax:lastCompare");
+      calcBtn.addEventListener('click', e=>{ e.preventDefault(); computeWrapper(); });
+      resetBtn.addEventListener('click', e=>{ e.preventDefault(); amtInput.value=''; out.classList.add('hidden'); showMsg('',false,true);
+        const url=new URL(window.location.origin + APP_BASE_PATH); history.replaceState(null,'',url.toString()); });
 
-          if (qWard && WARD_DATA[qWard]) wardSel.value = qWard;
-          else if (lastWard && WARD_DATA[lastWard]) wardSel.value = lastWard;
-          if (qCmp && WARD_DATA[qCmp]) compareSel.value = qCmp;
-          else if (lastCmp && WARD_DATA[lastCmp]) compareSel.value = lastCmp;
-          if (qAmt) {
-            amtInput.value = qAmt;
-          } else if (lastAmt) {
-            amtInput.value = (Number(lastAmt) / 100).toString();
-          }
+      amtInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); computeWrapper(); } });
+      [wardSel, compareSel].forEach(sel=>{ sel.addEventListener('change', computeWrapper); sel.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); computeWrapper(); } }); });
+      amtInput.addEventListener('blur', formatAmountField);
+      amtInput.addEventListener('input', ()=>{ const ok=parseAmount(amtInput.value)>0; amtInput.classList.toggle('input-error', !ok && amtInput.value.trim()!==''); if (ok) msg.classList.add('hidden'); });
 
-          applyDensity(localStorage.getItem("tax:density") || "cozy");
-          sortBtn.textContent =
-            sortMode === "percent" ? "Sort by amount" : "Sort by %";
-          sortBtn.setAttribute(
-            "aria-pressed",
-            sortMode === "amount" ? "true" : "false"
-          );
+      async function loadRates(){
+        try{
+          const dataUrl = new URL(APP_BASE_PATH.replace(/\/?$/,'/') + 'ward_rates_2025.json', window.location.origin);
+          const res=await fetch(dataUrl.toString(),{cache:'no-store'}); if(!res.ok) throw new Error('missing JSON'); WARD_DATA=await res.json();
 
-          loadingSkel.style.display = "none";
-          if (qAmt || lastAmt) computeWrapper();
-        } catch (e) {
-          loadingSkel.style.display = "none";
-          showMsg(
-            "Could not load ward_rates_2025.json. Ensure it sits next to index.html.",
-            true
-          );
-          console.error(e);
-        }
+          const updated = WARD_DATA._meta?.updated; if (updated){ updatedStamp.textContent = `Percentages last updated: ${updated}`; updatedStamp.classList.remove('hidden'); delete WARD_DATA._meta; }
+
+          const wards=Object.keys(WARD_DATA); wardSel.innerHTML=''; compareSel.innerHTML="<option value=''>— no comparison —</option>";
+          wards.forEach(w=>{ const o=document.createElement('option'); o.textContent=w; wardSel.appendChild(o); const o2=document.createElement('option'); o2.value=w; o2.textContent=w; compareSel.appendChild(o2); });
+
+          const url=new URL(window.location.href);
+          const qWard=url.searchParams.get('ward'); const qAmt=url.searchParams.get('amount'); const qCmp=url.searchParams.get('compare');
+          const lastWard = localStorage.getItem('tax:lastWard'); const lastAmt  = localStorage.getItem('tax:lastAmt'); const lastCmp  = localStorage.getItem('tax:lastCompare');
+
+          if(qWard && WARD_DATA[qWard]) wardSel.value=qWard; else if(lastWard && WARD_DATA[lastWard]) wardSel.value=lastWard;
+          if(qCmp && WARD_DATA[qCmp]) compareSel.value=qCmp; else if(lastCmp && WARD_DATA[lastCmp]) compareSel.value=lastCmp;
+          if(qAmt){ amtInput.value=qAmt; } else if(lastAmt){ amtInput.value=(Number(lastAmt)/100).toString(); }
+
+          applyDensity(localStorage.getItem('tax:density') || 'cozy');
+          sortBtn.textContent = sortMode==='percent'?'Sort by amount':'Sort by %'; sortBtn.setAttribute('aria-pressed', sortMode==='amount'?'true':'false');
+
+          // init palette silently (no compute until inputs are ready)
+          const savedPalette = localStorage.getItem('tax:palette') || 'civic';
+          paletteSel.value = savedPalette;
+          applyPalette(savedPalette, {silent:true});
+
+          loadingSkel.style.display='none';
+          if(qAmt || lastAmt) computeWrapper();
+        }catch(e){ loadingSkel.style.display='none'; showMsg('Could not load ward_rates_2025.json. Ensure it sits next to index.html.', true); console.error(e); }
       }
-      window.addEventListener("DOMContentLoaded", loadRates);
+      function computeWrapper(){ compute(); linkItem.href=buildDeepLink(wardSel.value, parseAmount(amtInput.value)); }
+
+      window.addEventListener('DOMContentLoaded', loadRates);
     </script>
 
     <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
