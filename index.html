@@ -716,11 +716,9 @@
     </div>
 
     <script>
-      // ===== App base path =====
-      // Root-hosted site: '/'  • Subfolder: '/arcadia-tax-breakdown/'
+      /* ===== Base path (set to '/' or your subfolder like '/arcadia-tax-breakdown/') ===== */
       const APP_BASE_PATH = "/";
-
-      const ANALYTICS_ENDPOINT = null; // set later if you add a collector
+      const ANALYTICS_ENDPOINT = null;
 
       let WARD_DATA = {};
       let lastMergedWard = null,
@@ -771,6 +769,7 @@
 
       const cName = document.getElementById("cName");
       const cEmail = document.getElementById("cEmail");
+      const mEmailEl = document.getElementById("mEmail");
       const ccListEl = document.getElementById("ccList");
 
       const helpOverlay = document.getElementById("helpOverlay");
@@ -970,7 +969,6 @@
         return rows;
       }
 
-      // ALWAYS build links to the app entry (root or configured subfolder)
       function buildDeepLink(ward, amountCents) {
         const base = new URL(APP_BASE_PATH, window.location.origin);
         base.searchParams.set("ward", ward);
@@ -1040,22 +1038,12 @@
         <div class="table-wrap">
           <table aria-label="Breakdown table for ${safe(wardName)}">
             <thead>
-              <tr>
-                <th>Budget Category</th>
-                <th class="right">%</th>
-                <th style="width:35%">Allocation</th>
-                <th class="right">Amount (CAD)</th>
-              </tr>
+              <tr><th>Budget Category</th><th class="right">%</th><th style="width:35%">Allocation</th><th class="right">Amount (CAD)</th></tr>
             </thead>
             <tbody></tbody>
-            <tfoot>
-              <tr>
-                <td><strong>Total</strong></td>
-                <td class="right">100%</td>
-                <td></td>
-                <td class="right">${fmtMoney(totalCents)}</td>
-              </tr>
-            </tfoot>
+            <tfoot><tr><td><strong>Total</strong></td><td class="right">100%</td><td></td><td class="right">${fmtMoney(
+              totalCents
+            )}</td></tr></tfoot>
           </table>
         </div>`;
         renderTableBody(card.querySelector("tbody"), rows, diffSet);
@@ -1063,24 +1051,8 @@
       }
 
       function track(event, props = {}) {
-        const payload = {
-          ts: Date.now(),
-          event,
-          ward: wardSel.value || null,
-          compare: compareSel.value || null,
-          hasCompare: !!compareSel.value,
-          amountCents: parseAmount(amtInput.value) || null,
-          ...props,
-        };
         try {
-          if (ANALYTICS_ENDPOINT && navigator.sendBeacon) {
-            const blob = new Blob([JSON.stringify(payload)], {
-              type: "application/json",
-            });
-            navigator.sendBeacon(ANALYTICS_ENDPOINT, blob);
-          } else {
-            console.log("[analytics]", payload);
-          }
+          console.log("[analytics]", { ts: Date.now(), event, ...props });
         } catch {}
       }
 
@@ -1108,7 +1080,7 @@
 
         const parts = [`Bill: ${fmtMoney(amountCents)}`, `Ward: ${ward}`];
         if (compareWard) parts.push(`Compare: ${compareWard}`);
-        document.getElementById("summary").textContent = parts.join("  •  ");
+        summaryEl.textContent = parts.join("  •  ");
 
         const cats = WARD_DATA[ward];
         const pairs = normalizePairs(cats);
@@ -1158,7 +1130,12 @@
         cEmail.innerHTML = ctr.email
           ? `<a href="mailto:${ctr.email}">${ctr.email}</a>`
           : "—";
-        ccListEl.textContent = QUERY_CC.join("; ");
+        mEmailEl.innerHTML = MAYOR.email
+          ? `<a href="mailto:${MAYOR.email}">${MAYOR.email}</a>`
+          : "—";
+        ccListEl.innerHTML = QUERY_CC.map(
+          (e) => `<a href="mailto:${e}">${e}</a>`
+        ).join("; ");
 
         if (cmpRows) {
           compareBanner.classList.remove("hidden");
@@ -1166,7 +1143,6 @@
           singleTitle.classList.add("hidden");
           singleTitle.textContent = "";
           singleWrap.classList.add("hidden");
-
           compareWrap.classList.remove("hidden");
           compareWrap.innerHTML = "";
           compareWrap.appendChild(buildCard(ward, rows, total, diffSet));
@@ -1175,13 +1151,10 @@
           );
         } else {
           compareBanner.classList.add("hidden");
-          compareBanner.textContent = "";
           compareWrap.classList.add("hidden");
           compareWrap.innerHTML = "";
-
           singleTitle.textContent = ward;
           singleTitle.classList.remove("hidden");
-
           singleWrap.classList.remove("hidden");
           wardHeadPct.textContent = "%";
           wardHeadBar.textContent = "Allocation";
@@ -1211,7 +1184,6 @@
             "fbshare",
             "width=640,height=600"
           );
-          track("share_fb");
         };
 
         const subject = `Question re 2026 plan — ${ward} property tax breakdown`;
@@ -1221,9 +1193,7 @@
         const lines = [
           greeting,
           "",
-          `My annual property tax bill for ${ward} is ${fmtMoney(
-            amountCents
-          )}.`,
+          `My annual property tax bill for ${fmtMoney(amountCents)}.`,
           "Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?",
           "",
           "I've attached an image or PDF of the breakdown for your reference.",
@@ -1241,7 +1211,6 @@
           } catch {
             window.open(mailto, "_blank");
           }
-          track("email_click");
         };
 
         lastMergedWard = rows;
@@ -1266,8 +1235,6 @@
         showMsg("", false, true);
         out.focus({ preventScroll: false });
         history.replaceState(null, "", link);
-
-        track("calculate", { hasCompare: !!cmpRows });
       }
       function computeWrapper() {
         compute();
@@ -1284,6 +1251,8 @@
         while (n > 0 && ctx.measureText(text.slice(0, n) + e).width > maxW) n--;
         return text.slice(0, n) + e;
       }
+
+      /* Single-ward PNG */
       async function generateTablePNG(ward, rows, totalCents) {
         const pad = 24,
           rowH = 40,
@@ -1312,18 +1281,13 @@
         ctx.fillRect(pad, pad, innerW, headH);
         ctx.fillStyle = "#111827";
         ctx.font = "700 16px " + sans;
-
         let x = pad,
           y = pad + 30;
         ctx.fillText("Budget Category", x + 4, y);
         x += colCat;
-        ctx.fillText(
-          "% (" + ward + ")",
-          x + colPct - ctx.measureText("% (" + ward + ")").width - 8,
-          y
-        );
+        ctx.fillText("%", x + colPct - ctx.measureText("%").width - 8, y);
         x += colPct;
-        ctx.fillText("Allocation (" + ward + ")", x + 8, y);
+        ctx.fillText("Allocation", x + 8, y);
         x += colBar;
         ctx.fillText(
           "Amount (CAD)",
@@ -1333,29 +1297,18 @@
 
         let cy = pad + headH;
         rows.forEach((r) => {
-          let cx = pad;
-          const yMid = cy + rowH / 2;
+          let cx = pad,
+            yMid = cy + rowH / 2;
           ctx.fillStyle = "#111827";
           ctx.font = "600 14px " + sans;
           ctx.fillText(truncate(ctx, r.category, colCat - 8), cx + 4, yMid - 4);
-          if (r.explain) {
-            ctx.fillStyle = "#6b7280";
-            ctx.font = "400 12px " + sans;
-            ctx.fillText(
-              truncate(ctx, r.explain, colCat - 8),
-              cx + 4,
-              yMid + 12
-            );
-          }
           cx += colCat;
-
           ctx.fillStyle = "#111827";
           ctx.textAlign = "right";
           ctx.font = "500 14px " + mono;
           ctx.fillText(r.percent.toFixed(2) + "%", cx + colPct - 4, yMid + 5);
           ctx.textAlign = "left";
           cx += colPct;
-
           ctx.fillStyle = "#e5e7eb";
           ctx.fillRect(cx + 4, yMid - 6, colBar - 8, 12);
           ctx.fillStyle = colorFor(r.category);
@@ -1366,7 +1319,6 @@
             12
           );
           cx += colBar;
-
           ctx.textAlign = "right";
           ctx.font = "600 14px " + mono;
           ctx.fillStyle = "#111827";
@@ -1379,7 +1331,6 @@
             yMid + 5
           );
           ctx.textAlign = "left";
-
           ctx.strokeStyle = "#e5e7eb";
           ctx.beginPath();
           ctx.moveTo(pad, cy + rowH);
@@ -1387,7 +1338,6 @@
           ctx.stroke();
           cy += rowH;
         });
-
         ctx.fillStyle = "#111827";
         ctx.font = "700 14px " + sans;
         ctx.fillText("This is my Property Tax total", pad + 4, cy + 30);
@@ -1407,101 +1357,149 @@
           canvas.toBlob((b) => res({ blob: b, canvas }), "image/png")
         );
       }
-      function downloadBlob(blob, filename) {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-      }
 
-      const menuItems = () =>
-        Array.from(
-          moreMenu.querySelectorAll('[role="menuitem"], a[role="menuitem"]')
-        );
-      function openMenu() {
-        moreMenu.classList.add("show");
-        moreBtn.setAttribute("aria-expanded", "true");
-        menuItems()[0]?.focus();
-        document.addEventListener("keydown", onMenuKey);
-      }
-      function closeMenu() {
-        moreMenu.classList.remove("show");
-        moreBtn.setAttribute("aria-expanded", "false");
-        document.removeEventListener("keydown", onMenuKey);
-        moreBtn.focus();
-      }
-      function onMenuKey(e) {
-        const items = menuItems();
-        const i = items.indexOf(document.activeElement);
-        if (e.key === "Escape") {
-          e.preventDefault();
-          closeMenu();
-        } else if (e.key === "ArrowDown") {
-          e.preventDefault();
-          (items[i + 1] || items[0]).focus();
-        } else if (e.key === "ArrowUp") {
-          e.preventDefault();
-          (items[i - 1] || items.at(-1)).focus();
-        } else if (e.key === "Home") {
-          e.preventDefault();
-          items[0]?.focus();
-        } else if (e.key === "End") {
-          e.preventDefault();
-          items.at(-1)?.focus();
+      /* Compare PNG (stacked) */
+      async function generateTablePNGCompare(
+        ward1,
+        rows1,
+        total1,
+        ward2,
+        rows2,
+        total2
+      ) {
+        const pad = 24,
+          rowH = 40,
+          headH = 48,
+          footH = 54,
+          gap = 28;
+        const colCat = 360,
+          colPct = 100,
+          colBar = 260,
+          colAmt = 160;
+        const innerW = colCat + colPct + colBar + colAmt;
+        const width = pad * 2 + innerW;
+        const height =
+          pad +
+          (headH + rows1.length * rowH + footH) +
+          gap +
+          (headH + rows2.length * rowH + footH) +
+          pad;
+        const scale = Math.min(window.devicePixelRatio || 2, 3);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const ctx = canvas.getContext("2d");
+        ctx.scale(scale, scale);
+        const mono = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
+        const sans =
+          "system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, width, height);
+
+        function drawBlock(yStart, ward, rows, totalCents) {
+          ctx.fillStyle = "#f9fafb";
+          ctx.fillRect(pad, yStart, innerW, headH);
+          ctx.fillStyle = "#111827";
+          ctx.font = "700 16px " + sans;
+          let x = pad,
+            y = yStart + 30;
+          ctx.fillText("Budget Category", x + 4, y);
+          x += colCat;
+          ctx.fillText("%", x + colPct - ctx.measureText("%").width - 8, y);
+          x += colPct;
+          ctx.fillText("Allocation", x + 8, y);
+          x += colBar;
+          ctx.fillText(
+            "Amount (CAD)",
+            x + colAmt - ctx.measureText("Amount (CAD)").width - 8,
+            y
+          );
+          ctx.font = "700 16px " + sans;
+          ctx.fillText(ward, pad + 4, yStart - 6);
+
+          let cy = yStart + headH;
+          rows.forEach((r) => {
+            let cx = pad,
+              yMid = cy + rowH / 2;
+            ctx.fillStyle = "#111827";
+            ctx.font = "600 14px " + sans;
+            ctx.fillText(
+              r.category.length > 40
+                ? r.category.slice(0, 40) + "…"
+                : r.category,
+              cx + 4,
+              yMid - 4
+            );
+            cx += colCat;
+            ctx.fillStyle = "#111827";
+            ctx.textAlign = "right";
+            ctx.font = "500 14px " + mono;
+            ctx.fillText(r.percent.toFixed(2) + "%", cx + colPct - 4, yMid + 5);
+            ctx.textAlign = "left";
+            cx += colPct;
+            ctx.fillStyle = "#e5e7eb";
+            ctx.fillRect(cx + 4, yMid - 6, colBar - 8, 12);
+            ctx.fillStyle = colorFor(r.category);
+            ctx.fillRect(
+              cx + 4,
+              yMid - 6,
+              Math.max(0, (colBar - 8) * (r.percent / 100)),
+              12
+            );
+            cx += colBar;
+            ctx.textAlign = "right";
+            ctx.font = "600 14px " + mono;
+            ctx.fillStyle = "#111827";
+            ctx.fillText(
+              new Intl.NumberFormat("en-CA", {
+                style: "currency",
+                currency: "CAD",
+              }).format(r.cents / 100),
+              cx + colAmt - 4,
+              yMid + 5
+            );
+            ctx.textAlign = "left";
+            ctx.strokeStyle = "#e5e7eb";
+            ctx.beginPath();
+            ctx.moveTo(pad, cy + rowH);
+            ctx.lineTo(pad + innerW, cy + rowH);
+            ctx.stroke();
+            cy += rowH;
+          });
+
+          ctx.fillStyle = "#111827";
+          ctx.font = "700 14px " + sans;
+          ctx.fillText("This is my Property Tax total", pad + 4, cy + 30);
+          ctx.textAlign = "right";
+          ctx.font = "700 14px " + mono;
+          ctx.fillText(
+            new Intl.NumberFormat("en-CA", {
+              style: "currency",
+              currency: "CAD",
+            }).format(totalCents / 100),
+            pad + innerW - 4,
+            cy + 30
+          );
+          ctx.textAlign = "left";
+          ctx.strokeStyle = "#e5e7eb";
+          ctx.strokeRect(
+            pad,
+            yStart,
+            innerW,
+            headH + rows.length * rowH + footH
+          );
+          return cy + footH;
         }
-      }
-      moreBtn.addEventListener("click", () =>
-        moreMenu.classList.contains("show") ? closeMenu() : openMenu()
-      );
-      moreBtn.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openMenu();
-        }
-      });
-      document.addEventListener("click", (e) => {
-        if (!moreMenu.contains(e.target) && e.target !== moreBtn) {
-          closeMenu();
-        }
-      });
 
-      function applyDensity(mode) {
-        document.body.classList.toggle("compact", mode === "compact");
-        densityBtn.setAttribute(
-          "aria-pressed",
-          mode === "compact" ? "true" : "false"
+        const bottom1 = drawBlock(pad + 24, ward1, rows1, total1);
+        drawBlock(bottom1 + gap, ward2, rows2, total2);
+
+        return new Promise((res) =>
+          canvas.toBlob((b) => res({ blob: b, canvas }), "image/png")
         );
-        densityBtn.textContent =
-          mode === "compact" ? "Cozy view" : "Compact view";
-        localStorage.setItem("tax:density", mode);
-        track("density_toggle", { mode });
       }
-      densityBtn.addEventListener("click", () => {
-        const mode = document.body.classList.contains("compact")
-          ? "cozy"
-          : "compact";
-        applyDensity(mode);
-      });
 
-      function applySort(mode) {
-        sortMode = mode;
-        sortBtn.textContent =
-          sortMode === "percent" ? "Sort by amount" : "Sort by %";
-        sortBtn.setAttribute(
-          "aria-pressed",
-          sortMode === "amount" ? "true" : "false"
-        );
-        localStorage.setItem("tax:sort", sortMode);
-        compute();
-        track("sort_toggle", { mode });
-      }
-      sortBtn.addEventListener("click", () =>
-        applySort(sortMode === "percent" ? "amount" : "percent")
-      );
-
+      /* Exports */
       async function ensureJsPDF() {
         if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
         await new Promise((ok, err) => {
@@ -1521,22 +1519,40 @@
           return;
         }
         try {
-          const { blob } = await generateTablePNG(
-            lastWardName,
-            lastMergedWard,
-            lastTotalCents
-          );
+          let blobObj;
+          if (lastMergedCmp && lastCmpName) {
+            blobObj = await generateTablePNGCompare(
+              lastWardName,
+              lastMergedWard,
+              lastTotalCents,
+              lastCmpName,
+              lastMergedCmp,
+              lastCmpTotal
+            );
+          } else {
+            blobObj = await generateTablePNG(
+              lastWardName,
+              lastMergedWard,
+              lastTotalCents
+            );
+          }
+          const { blob } = blobObj;
           const base = `arcadia-tax-breakdown-${lastWardName
             .replace(/\s+/g, "-")
             .toLowerCase()}`;
-          const fname = `${base}.png`;
+          const fname =
+            lastMergedCmp && lastCmpName
+              ? `${base}-vs-${lastCmpName
+                  .replace(/\s+/g, "-")
+                  .toLowerCase()}.png`
+              : `${base}.png`;
           downloadBlob(blob, fname);
           showToast("Image downloaded");
-          track("download_png");
         } catch {
           showMsg("Could not generate image on this device.", true);
         }
       };
+
       pdfItem.onclick = async () => {
         if (!lastMergedWard) {
           alert("Please calculate first.");
@@ -1548,97 +1564,101 @@
           unit: "pt",
           format: "a4",
         });
-        const ward = lastWardName;
         const amountCents = parseAmount(amtInput.value);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.text("Arcadia Residential Property Tax Breakdown", 40, 50);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(12);
-        doc.text(`Ward: ${ward}`, 40, 80);
-        doc.text(`Annual Property Tax Bill: ${fmtMoney(amountCents)}`, 40, 100);
-        let y = 140;
-        doc.setFont("helvetica", "bold");
-        doc.text("Category", 40, y);
-        doc.text("%", 250, y);
-        doc.text("Amount (CAD)", 350, y);
-        y += 20;
-        doc.setFont("helvetica", "normal");
-        lastMergedWard.forEach((r) => {
-          doc.text(r.category, 40, y);
-          doc.text(r.percent.toFixed(2) + "%", 250, y, { align: "right" });
-          doc.text(fmtMoney(r.cents), 430, y, { align: "right" });
-          if (r.explain) {
-            doc.setFontSize(9);
-            doc.text(r.explain, 60, y + 12);
-            doc.setFontSize(12);
-            y += 20;
-          }
+
+        function writeOne(ward, rows, totalCents) {
+          let y = 80;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(16);
+          doc.text("Arcadia Residential Property Tax Breakdown", 40, y);
+          y += 24;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(12);
+          doc.text(`Ward: ${ward}`, 40, y);
+          y += 18;
+          doc.text(`Annual Property Tax Bill: ${fmtMoney(amountCents)}`, 40, y);
+          y += 24;
+          doc.setFont("helvetica", "bold");
+          doc.text("Category", 40, y);
+          doc.text("%", 250, y);
+          doc.text("Amount (CAD)", 350, y);
           y += 20;
-        });
-        y += 10;
-        doc.setFont("helvetica", "bold");
-        doc.text("This is my Property Tax total", 40, y);
-        doc.text(fmtMoney(lastTotalCents), 430, y, { align: "right" });
-        const fname = `arcadia-tax-breakdown-${ward
+          doc.setFont("helvetica", "normal");
+          rows.forEach((r) => {
+            doc.text(r.category, 40, y);
+            doc.text(r.percent.toFixed(2) + "%", 250, y, { align: "right" });
+            doc.text(fmtMoney(r.cents), 430, y, { align: "right" });
+            if (r.explain) {
+              doc.setFontSize(9);
+              doc.text(r.explain, 60, y + 12);
+              doc.setFontSize(12);
+              y += 20;
+            }
+            y += 20;
+            if (y > 760) {
+              doc.addPage();
+              y = 80;
+            }
+          });
+          y += 10;
+          doc.setFont("helvetica", "bold");
+          doc.text("This is my Property Tax total", 40, y);
+          doc.text(fmtMoney(totalCents), 430, y, { align: "right" });
+        }
+
+        writeOne(lastWardName, lastMergedWard, lastTotalCents);
+        if (lastMergedCmp && lastCmpName) {
+          doc.addPage();
+          writeOne(lastCmpName, lastMergedCmp, lastCmpTotal);
+        }
+
+        const base = `arcadia-tax-breakdown-${lastWardName
           .replace(/\s+/g, "-")
-          .toLowerCase()}.pdf`;
+          .toLowerCase()}`;
+        const fname =
+          lastMergedCmp && lastCmpName
+            ? `${base}-vs-${lastCmpName.replace(/\s+/g, "-").toLowerCase()}.pdf`
+            : `${base}.pdf`;
         doc.save(fname);
-        track("download_pdf");
       };
 
       document.addEventListener("keydown", (e) => {
         if (out.classList.contains("hidden")) return;
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         const k = e.key.toLowerCase();
-        if (k === "e") {
-          emailBtn.click();
-        } else if (k === "p") {
-          pngItem.click();
-        } else if (k === "l") {
-          linkItem.click();
-        }
+        if (k === "e") emailBtn.click();
+        else if (k === "p") pngItem.click();
+        else if (k === "l") linkItem.click();
       });
 
-      // HELP modal: load help_content.html from an ABSOLUTE path under APP_BASE_PATH
       async function openHelp() {
         lastFocus = document.activeElement;
         helpOverlay.classList.add("show");
         helpModal.classList.add("show");
         helpOverlay.setAttribute("aria-hidden", "false");
-
         const helpBody = document.getElementById("helpBody");
         helpBody.setAttribute("aria-busy", "true");
         helpBody.innerHTML = '<p class="muted">Loading…</p>';
-
         try {
           const HELP_URL = new URL(
             APP_BASE_PATH.replace(/\/?$/, "/") + "help_content.html",
             window.location.origin
           );
-          HELP_URL.searchParams.set("v", String(Date.now()).slice(-6)); // tiny cache buster
+          HELP_URL.searchParams.set("v", String(Date.now()).slice(-6));
           const res = await fetch(HELP_URL.toString(), { cache: "no-store" });
-          if (!res.ok) {
-            console.warn(
-              "[help] failed to load:",
-              HELP_URL.toString(),
-              res.status
-            );
-            throw new Error("help not found");
-          }
+          if (!res.ok) throw new Error("help not found");
           const html = await res.text();
           helpBody.innerHTML =
             html && html.trim()
               ? html
               : '<p class="muted">No help content available.</p>';
-        } catch (e) {
-          console.warn("[help] content unavailable:", e);
+        } catch {
           helpBody.innerHTML =
             '<p class="muted">Help content is unavailable right now.</p>';
         } finally {
           helpBody.removeAttribute("aria-busy");
         }
-        document.getElementById("helpClose").focus();
+        helpClose.focus();
       }
       function closeHelp() {
         helpOverlay.classList.remove("show");
@@ -1646,21 +1666,56 @@
         helpOverlay.setAttribute("aria-hidden", "true");
         lastFocus?.focus();
       }
-      document.getElementById("helpBtn").addEventListener("click", openHelp);
-      document.getElementById("helpClose").addEventListener("click", closeHelp);
+      helpBtn.addEventListener("click", openHelp);
+      helpClose.addEventListener("click", closeHelp);
       helpOverlay.addEventListener("click", closeHelp);
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && helpModal.classList.contains("show"))
           closeHelp();
       });
 
-      function computeWrapper() {
-        compute();
-        linkItem.href = buildDeepLink(
-          wardSel.value,
-          parseAmount(amtInput.value)
+      function applyDensity(mode) {
+        document.body.classList.toggle("compact", mode === "compact");
+        densityBtn.setAttribute(
+          "aria-pressed",
+          mode === "compact" ? "true" : "false"
         );
+        densityBtn.textContent =
+          mode === "compact" ? "Cozy view" : "Compact view";
+        localStorage.setItem("tax:density", mode);
       }
+      densityBtn.addEventListener("click", () => {
+        const mode = document.body.classList.contains("compact")
+          ? "cozy"
+          : "compact";
+        applyDensity(mode);
+      });
+
+      function applySort(mode) {
+        sortMode = mode;
+        sortBtn.textContent =
+          sortMode === "percent" ? "Sort by amount" : "Sort by %";
+        sortBtn.setAttribute(
+          "aria-pressed",
+          sortMode === "amount" ? "true" : "false"
+        );
+        localStorage.setItem("tax:sort", sortMode);
+        compute();
+      }
+      sortBtn.addEventListener("click", () =>
+        applySort(sortMode === "percent" ? "amount" : "percent")
+      );
+
+      function downloadBlob(blob, filename) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
+
       calcBtn.addEventListener("click", (e) => {
         e.preventDefault();
         computeWrapper();
@@ -1673,6 +1728,7 @@
         const url = new URL(window.location.origin + APP_BASE_PATH);
         history.replaceState(null, "", url.toString());
       });
+
       amtInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -1695,9 +1751,7 @@
           "input-error",
           !ok && amtInput.value.trim() !== ""
         );
-        if (ok) {
-          msg.classList.add("hidden");
-        }
+        if (ok) msg.classList.add("hidden");
       });
 
       async function loadRates() {
@@ -1749,7 +1803,12 @@
           }
 
           applyDensity(localStorage.getItem("tax:density") || "cozy");
-          applySort(sortMode);
+          sortBtn.textContent =
+            sortMode === "percent" ? "Sort by amount" : "Sort by %";
+          sortBtn.setAttribute(
+            "aria-pressed",
+            sortMode === "amount" ? "true" : "false"
+          );
 
           loadingSkel.style.display = "none";
           if (qAmt || lastAmt) computeWrapper();
