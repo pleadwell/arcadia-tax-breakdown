@@ -108,6 +108,16 @@
         border: 1px solid var(--border);
         color: #111;
       }
+      .density-btn {
+        background: #fff;
+        border: 1px solid var(--border);
+        padding: 8px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .spacer {
+        flex: 1;
+      }
 
       .warn {
         color: #7a2e0e;
@@ -133,7 +143,7 @@
         align-items: center;
       }
 
-      /* More… menu */
+      /* More… menu (accessible) */
       .menu-wrap {
         position: relative;
       }
@@ -172,8 +182,11 @@
         cursor: pointer;
       }
       .menu a:hover,
-      .menu button:hover {
+      .menu button:hover,
+      .menu a:focus,
+      .menu button:focus {
         background: #f3f4f6;
+        outline: none;
       }
 
       /* contact pills & overflow fixes */
@@ -204,6 +217,12 @@
         white-space: normal;
         overflow-wrap: anywhere;
         word-break: break-word;
+      }
+
+      /* summary strip */
+      #summary {
+        color: var(--muted);
+        margin: 6px 0 10px;
       }
 
       /* table & bars (denser + numeric alignment) */
@@ -250,6 +269,17 @@
         bottom: 0;
         width: 0%;
         background: var(--accent);
+      }
+      .bar.pattern::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          45deg,
+          transparent 0 6px,
+          rgba(255, 255, 255, 0.35) 6px 10px
+        );
+        pointer-events: none;
       }
 
       /* clamp long notes */
@@ -324,6 +354,15 @@
         margin: 2px 0 8px;
       }
 
+      /* density toggle */
+      body.compact th,
+      body.compact td {
+        padding: 6px;
+      }
+      body.compact .bar {
+        height: 4px;
+      }
+
       /* inline errors */
       .input-error {
         border-color: #ef4444 !important;
@@ -351,11 +390,90 @@
         transform: translateX(-50%) translateY(-4px);
       }
 
+      /* modal help */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        z-index: 20;
+      }
+      .overlay.show {
+        display: block;
+      }
+      .modal {
+        position: fixed;
+        inset: auto 0 0 0;
+        margin: auto;
+        max-width: 720px;
+        background: #fff;
+        color: var(--ink);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+        display: none;
+        z-index: 21;
+      }
+      .modal.show {
+        display: block;
+      }
+      .modal header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .modal .content {
+        max-height: 60vh;
+        overflow: auto;
+      }
+      .modal button.close {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+
+      /* reduced motion & dark mode */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b0e12;
+          --surface: #12161c;
+          --ink: #e5e7eb;
+          --muted: #9aa2ad;
+          --border: #273043;
+          --accent: #5aa0ff;
+        }
+        .warn {
+          background: #3a2b22;
+          border-color: #6a4b3b;
+          color: #ffe5d0;
+        }
+        .info {
+          background: #16312a;
+          border-color: #2d5a4a;
+          color: #c6f1dd;
+        }
+        .modal {
+          background: #12161c;
+          color: #e5e7eb;
+        }
+      }
+
       @media print {
         .tools,
         .actions,
         .menu-wrap,
-        #moreBtn {
+        #moreBtn,
+        #densityBtn,
+        #helpBtn {
           display: none !important;
         }
         .card {
@@ -371,6 +489,22 @@
         }
         .muted {
           color: #444;
+        }
+      }
+
+      /* skeleton */
+      .skel {
+        background: linear-gradient(90deg, #eee, #f5f5f5, #eee);
+        background-size: 200% 100%;
+        animation: sk 1s linear infinite;
+        border-radius: 8px;
+      }
+      @keyframes sk {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
         }
       }
     </style>
@@ -427,9 +561,22 @@
           role="status"
           aria-live="polite"
         ></div>
+        <div
+          id="loadingSkel"
+          class="skel"
+          style="height: 10px; margin-top: 10px"
+        ></div>
       </section>
 
-      <section id="outCard" class="card hidden" aria-label="Results">
+      <!-- Optional: last updated / prepared stamp -->
+      <div id="updatedStamp" class="muted hidden" style="margin: 6px 0"></div>
+
+      <section
+        id="outCard"
+        class="card hidden"
+        aria-label="Results"
+        tabindex="-1"
+      >
         <div class="tools">
           <button class="ghost" id="shareBtn">Share on Facebook</button>
           <button class="primary" id="emailBtn">
@@ -442,6 +589,7 @@
               id="moreBtn"
               aria-haspopup="true"
               aria-expanded="false"
+              aria-controls="moreMenu"
             >
               More…
             </button>
@@ -451,14 +599,50 @@
               role="menu"
               aria-label="More actions"
             >
-              <button id="pngItem" role="menuitem">Download image (PNG)</button>
-              <button id="pdfItem" role="menuitem">Download PDF</button>
-              <a id="linkItem" role="menuitem" href="#" target="_blank"
+              <button id="pngItem" role="menuitem" tabindex="-1">
+                Download image (PNG)
+              </button>
+              <button id="pdfItem" role="menuitem" tabindex="-1">
+                Download PDF
+              </button>
+              <a
+                id="linkItem"
+                role="menuitem"
+                tabindex="-1"
+                href="#"
+                target="_blank"
                 >Open shareable link</a
               >
             </div>
           </div>
+
+          <span class="spacer"></span>
+          <button
+            class="density-btn"
+            id="sortBtn"
+            aria-pressed="false"
+            title="Toggle sort"
+          >
+            Sort by amount
+          </button>
+          <button
+            class="density-btn"
+            id="densityBtn"
+            aria-pressed="false"
+            title="Toggle density"
+          >
+            Compact view
+          </button>
+          <button class="density-btn" id="helpBtn" title="Help">Help</button>
         </div>
+
+        <!-- Legend + Summary -->
+        <div id="summary"></div>
+        <div
+          id="legend"
+          class="muted"
+          style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px"
+        ></div>
 
         <p>
           <strong
@@ -482,7 +666,7 @@
           <div class="row">
             <span class="label">Queries CC list:</span
             ><span id="ccList" class="pill address"
-              >info@arcadianb.ca, Karrie.Bedford@arcadianb.ca,
+              >info@arcadianb.ca; Karrie.Bedford@arcadianb.ca;
               Jessica.Mcgarity@arcadianb.ca</span
             >
           </div>
@@ -524,10 +708,35 @@
       </section>
     </div>
 
-    <!-- jsPDF for PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Help modal -->
+    <div id="helpOverlay" class="overlay" aria-hidden="true"></div>
+    <div
+      id="helpModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="helpTitle"
+      aria-describedby="helpBody"
+    >
+      <header>
+        <h2 id="helpTitle" style="margin: 0; font-size: 18px">
+          What do the categories mean?
+        </h2>
+        <button class="close" id="helpClose" aria-label="Close help">
+          Close
+        </button>
+      </header>
+      <div id="helpBody" class="content" tabindex="0">
+        <!-- loaded from help_content.html -->
+      </div>
+    </div>
+
+    <!-- jsPDF lazy-loaded in script -->
 
     <script>
+      // ------------------ Config ------------------
+      const ANALYTICS_ENDPOINT = null; // set to your endpoint later if desired
+
       // ------------------ State ------------------
       let WARD_DATA = {};
       let lastMergedWard = null,
@@ -536,6 +745,7 @@
       let lastMergedCmp = null,
         lastCmpName = "",
         lastCmpTotal = 0;
+      let sortMode = localStorage.getItem("tax:sort") || "percent"; // 'percent' | 'amount'
 
       // ------------------ Elements ------------------
       const wardSel = document.getElementById("ward");
@@ -547,6 +757,8 @@
       const out = document.getElementById("outCard");
       const msg = document.getElementById("msg");
       const note = document.getElementById("note");
+      const updatedStamp = document.getElementById("updatedStamp");
+      const loadingSkel = document.getElementById("loadingSkel");
 
       const singleTitle = document.getElementById("singleTitle");
       const singleWrap = document.getElementById("singleWrap");
@@ -568,11 +780,23 @@
       const pngItem = document.getElementById("pngItem");
       const pdfItem = document.getElementById("pdfItem");
       const linkItem = document.getElementById("linkItem");
+      const densityBtn = document.getElementById("densityBtn");
+      const sortBtn = document.getElementById("sortBtn");
+      const helpBtn = document.getElementById("helpBtn");
+      const summaryEl = document.getElementById("summary");
+      const legendEl = document.getElementById("legend");
 
       const cName = document.getElementById("cName");
       const cEmail = document.getElementById("cEmail");
       const ccListEl = document.getElementById("ccList");
 
+      // Help modal
+      const helpOverlay = document.getElementById("helpOverlay");
+      const helpModal = document.getElementById("helpModal");
+      const helpClose = document.getElementById("helpClose");
+      let lastFocus = null;
+
+      // ------------------ Contacts ------------------
       const MAYOR = {
         name: "Clinton Sharpe",
         email: "clinton.sharpe@arcadianb.ca",
@@ -610,7 +834,7 @@
         },
       };
 
-      // ------------------ Category colors ------------------
+      // ------------------ Category colors & patterns ------------------
       const CATEGORY_COLORS = {
         Education: "#2563eb",
         "Public Safety": "#16a34a",
@@ -625,10 +849,24 @@
         Environmental: "#22c55e",
         Emergency: "#fb7185",
       };
+      const PATTERN_CATS = new Set(["Fire Services", "Debt Services"]); // add more if needed
       const fallbackColor = "#0d6efd";
       const colorFor = (cat) => CATEGORY_COLORS[cat] || fallbackColor;
 
       // ------------------ Utils ------------------
+      function safe(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[m])
+        );
+      }
       function showMsg(text, isError = false, clear = false) {
         if (clear || !text) {
           msg.classList.add("hidden");
@@ -741,6 +979,7 @@
         }
         return out;
       }
+
       function asSortedRows(map, explainMap) {
         const rows = Array.from(map.entries()).map(([k, obj]) => ({
           category: k,
@@ -748,19 +987,27 @@
           cents: obj.cents,
           explain: explainMap[k]?.explain || "",
         }));
-        rows.sort((a, b) => b.percent - a.percent);
+        rows.sort((a, b) =>
+          sortMode === "percent" ? b.percent - a.percent : b.cents - a.cents
+        );
         return rows;
       }
-      function buildDeepLink(ward, amount) {
-        const url = new URL(location.href);
-        url.searchParams.set("ward", ward);
-        url.searchParams.set("amount", (amount / 100).toString());
-        const cmp = compareSel.value || "";
-        if (cmp) url.searchParams.set("compare", cmp);
-        else url.searchParams.delete("compare");
-        return url.toString();
+
+      function buildDeepLink(ward, amountCents) {
+        // Always point to the main app file, even if the current page is help_content.html
+        const base = new URL(
+          "index.html",
+          window.location.origin + window.location.pathname
+        );
+        base.searchParams.set("ward", ward);
+        base.searchParams.set("amount", (amountCents / 100).toString());
+        const cmp = (compareSel.value || "").trim();
+        if (cmp) base.searchParams.set("compare", cmp);
+        else base.searchParams.delete("compare");
+        return base.toString();
       }
-      // Use semicolons between addresses (works best with Outlook-style clients)
+
+      // Semicolon-separated addresses, encoded (better for Outlook/Apple Mail)
       function buildMailtoEncoded(toList, ccList, subject, body) {
         const SEP = "; ";
         const to = toList.filter(Boolean).join(SEP);
@@ -774,17 +1021,21 @@
       }
 
       // ------------------ Rendering helpers ------------------
-      function renderTableBody(tbody, rows) {
+      function renderTableBody(tbody, rows, diffSet = null) {
         tbody.innerHTML = "";
         for (const r of rows) {
           const tr = document.createElement("tr");
 
           const tdCat = document.createElement("td");
-          tdCat.innerHTML = `<div><strong>${
+          const diffBadge =
+            diffSet && diffSet.has(r.category)
+              ? `<span class="pill" style="margin-left:6px">diff</span>`
+              : "";
+          tdCat.innerHTML = `<div><strong>${safe(
             r.category
-          }</strong></div><div class="category-explain">${
+          )}</strong>${diffBadge}</div><div class="category-explain">${safe(
             r.explain || ""
-          }</div>`;
+          )}</div>`;
 
           const tdPct = document.createElement("td");
           tdPct.className = "right";
@@ -796,6 +1047,8 @@
           const fill = document.createElement("span");
           fill.style.width = `${r.percent.toFixed(6)}%`;
           fill.style.background = colorFor(r.category);
+          bar.title = `${r.percent.toFixed(2)}% • ${fmtMoney(r.cents)}`;
+          if (PATTERN_CATS.has(r.category)) bar.classList.add("pattern");
           bar.appendChild(fill);
           tdBar.appendChild(bar);
 
@@ -807,13 +1060,14 @@
           tbody.appendChild(tr);
         }
       }
-      function buildCard(wardName, rows, totalCents) {
+
+      function buildCard(wardName, rows, totalCents, diffSet = null) {
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
-        <div class="compare-card-title">${wardName}</div>
+        <div class="compare-card-title">${safe(wardName)}</div>
         <div class="table-wrap">
-          <table aria-label="Breakdown table for ${wardName}">
+          <table aria-label="Breakdown table for ${safe(wardName)}">
             <thead>
               <tr>
                 <th>Budget Category</th>
@@ -834,8 +1088,33 @@
           </table>
         </div>`;
         const tbody = card.querySelector("tbody");
-        renderTableBody(tbody, rows);
+        renderTableBody(tbody, rows, diffSet);
         return card;
+      }
+
+      // ------------------ Analytics ------------------
+      function track(event, props = {}) {
+        const payload = {
+          ts: Date.now(),
+          event,
+          ward: wardSel.value || null,
+          compare: compareSel.value || null,
+          hasCompare: !!compareSel.value,
+          amountCents: parseAmount(amtInput.value) || null,
+          ...props,
+        };
+        try {
+          if (ANALYTICS_ENDPOINT && navigator.sendBeacon) {
+            const blob = new Blob([JSON.stringify(payload)], {
+              type: "application/json",
+            });
+            navigator.sendBeacon(ANALYTICS_ENDPOINT, blob);
+          } else {
+            console.log("[analytics]", payload);
+          }
+        } catch (e) {
+          /* no-op */
+        }
       }
 
       // ------------------ Compute + Render ------------------
@@ -861,6 +1140,11 @@
           amtInput.removeAttribute("aria-invalid");
         }
 
+        // summary strip
+        const parts = [`Bill: ${fmtMoney(amountCents)}`, `Ward: ${ward}`];
+        if (compareWard) parts.push(`Compare: ${compareWard}`);
+        summaryEl.textContent = parts.join("  •  ");
+
         const cats = WARD_DATA[ward];
         const pairs = normalizePairs(cats);
         const sumRaw = Object.entries(cats).reduce(
@@ -868,7 +1152,9 @@
           0
         );
         if (Math.abs(sumRaw - 100) > 0.001) {
-          note.textContent = `Note: ${ward} percentages sum to ${sumRaw.toFixed(
+          note.textContent = `Note: ${safe(
+            ward
+          )} percentages sum to ${sumRaw.toFixed(
             2
           )}%. Values have been normalized to 100%.`;
           note.classList.remove("hidden");
@@ -881,26 +1167,39 @@
           0
         );
 
-        // optional compare
+        // compare, compute diff set by % delta
         let cmpRows = null,
-          cmpTotal = 0;
+          cmpTotal = 0,
+          diffSet = null;
         if (compareWard && WARD_DATA[compareWard]) {
           const c2 = WARD_DATA[compareWard];
           const p2 = normalizePairs(c2);
           const a2 = allocateCents(amountCents, p2);
           cmpRows = asSortedRows(a2, c2);
           cmpTotal = Array.from(a2.values()).reduce((t, o) => t + o.cents, 0);
+
+          const byCat = Object.fromEntries(cmpRows.map((r) => [r.category, r]));
+          const diffs = rows
+            .map((r) => ({
+              cat: r.category,
+              d: Math.abs(r.percent - (byCat[r.category]?.percent || 0)),
+            }))
+            .sort((a, b) => b.d - a.d)
+            .slice(0, 3)
+            .map((x) => x.cat);
+          diffSet = new Set(diffs);
         }
 
         // contacts
         const ctr = CONTACTS[ward] || {};
         cName.textContent = ctr.name || "—";
-        cEmail.textContent = ctr.email || "—";
+        cEmail.innerHTML = ctr.email
+          ? `<a href="mailto:${ctr.email}">${ctr.email}</a>`
+          : "—";
         ccListEl.textContent = QUERY_CC.join("; ");
 
         // UI: single vs compare
         if (cmpRows) {
-          // compare cards
           compareBanner.classList.remove("hidden");
           compareBanner.textContent = `Comparing: ${ward} vs ${compareWard}`;
           singleTitle.classList.add("hidden");
@@ -909,8 +1208,10 @@
 
           compareWrap.classList.remove("hidden");
           compareWrap.innerHTML = "";
-          compareWrap.appendChild(buildCard(ward, rows, total));
-          compareWrap.appendChild(buildCard(compareWard, cmpRows, cmpTotal));
+          compareWrap.appendChild(buildCard(ward, rows, total, diffSet));
+          compareWrap.appendChild(
+            buildCard(compareWard, cmpRows, cmpTotal, diffSet)
+          );
         } else {
           compareBanner.classList.add("hidden");
           compareBanner.textContent = "";
@@ -921,14 +1222,25 @@
           singleTitle.classList.remove("hidden");
 
           singleWrap.classList.remove("hidden");
-          // Short headers in single view
           wardHeadPct.textContent = "%";
           wardHeadBar.textContent = "Allocation";
           wardHeadAmt.textContent = "Amount (CAD)";
-          renderTableBody(resultsBody, rows);
+          renderTableBody(resultsBody, rows, null);
           totalPct.textContent = "100%";
           totalAmt.textContent = fmtMoney(total);
         }
+
+        // legend
+        legendEl.innerHTML = "";
+        rows.slice(0, 8).forEach((r) => {
+          const span = document.createElement("span");
+          span.style.display = "inline-flex";
+          span.style.alignItems = "center";
+          span.innerHTML = `<span style="width:10px;height:10px;border-radius:2px;background:${colorFor(
+            r.category
+          )};margin-right:6px;display:inline-block"></span>${safe(r.category)}`;
+          legendEl.appendChild(span);
+        });
 
         // tools & links
         const link = buildDeepLink(ward, amountCents);
@@ -940,6 +1252,7 @@
             "fbshare",
             "width=640,height=600"
           );
+          track("share_fb");
         };
 
         const subject = `Question re 2026 plan — ${ward} property tax breakdown`;
@@ -969,6 +1282,7 @@
           } catch {
             window.open(mailto, "_blank");
           }
+          track("email_click");
         };
 
         // persist for exports and defaults
@@ -982,9 +1296,21 @@
         localStorage.setItem("tax:lastCompare", compareWard || "");
         localStorage.setItem("tax:lastAmt", String(amountCents));
 
+        // prepared/updated stamp
+        const prepared = new Date().toLocaleString();
+        if (!updatedStamp.classList.contains("hidden")) {
+          updatedStamp.textContent += ` • Prepared on ${prepared}`;
+        } else {
+          updatedStamp.textContent = `Prepared on ${prepared}`;
+          updatedStamp.classList.remove("hidden");
+        }
+
         out.classList.remove("hidden");
         showMsg("", false, true);
+        out.focus({ preventScroll: false });
         history.replaceState(null, "", link);
+
+        track("calculate", { hasCompare: !!cmpRows });
       }
 
       function computeWrapper() {
@@ -1136,57 +1462,106 @@
         setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       }
 
-      // ------------------ Events ------------------
-      function computeWrapper() {
-        compute();
-        linkItem.href = buildDeepLink(
-          wardSel.value,
-          parseAmount(amtInput.value)
+      // ------------------ Accessibility: More… menu ------------------
+      const menuItems = () =>
+        Array.from(
+          moreMenu.querySelectorAll('[role="menuitem"], a[role="menuitem"]')
         );
+      function openMenu() {
+        moreMenu.classList.add("show");
+        moreBtn.setAttribute("aria-expanded", "true");
+        menuItems()[0]?.focus();
+        document.addEventListener("keydown", onMenuKey);
       }
-      calcBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        computeWrapper();
-      });
-      resetBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        amtInput.value = "";
-        out.classList.add("hidden");
-        showMsg("", false, true);
-        const url = new URL(location.href);
-        ["ward", "amount", "compare"].forEach((p) =>
-          url.searchParams.delete(p)
-        );
-        history.replaceState(null, "", url.toString());
-      });
-      amtInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
+      function closeMenu() {
+        moreMenu.classList.remove("show");
+        moreBtn.setAttribute("aria-expanded", "false");
+        document.removeEventListener("keydown", onMenuKey);
+        moreBtn.focus();
+      }
+      function onMenuKey(e) {
+        const items = menuItems();
+        const i = items.indexOf(document.activeElement);
+        if (e.key === "Escape") {
           e.preventDefault();
-          computeWrapper();
+          closeMenu();
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          (items[i + 1] || items[0]).focus();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          (items[i - 1] || items.at(-1)).focus();
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          items[0]?.focus();
+        } else if (e.key === "End") {
+          e.preventDefault();
+          items.at(-1)?.focus();
         }
-      });
-      [wardSel, compareSel].forEach((sel) => {
-        sel.addEventListener("change", computeWrapper);
-        sel.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            computeWrapper();
-          }
-        });
-      });
-      amtInput.addEventListener("blur", formatAmountField);
-
-      // More… menu
-      moreBtn.addEventListener("click", () => {
-        const open = moreMenu.classList.toggle("show");
-        moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      moreBtn.addEventListener("click", () =>
+        moreMenu.classList.contains("show") ? closeMenu() : openMenu()
+      );
+      moreBtn.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openMenu();
+        }
       });
       document.addEventListener("click", (e) => {
         if (!moreMenu.contains(e.target) && e.target !== moreBtn) {
-          moreMenu.classList.remove("show");
-          moreBtn.setAttribute("aria-expanded", "false");
+          closeMenu();
         }
       });
+
+      // ------------------ Density & Sort toggles ------------------
+      function applyDensity(mode) {
+        document.body.classList.toggle("compact", mode === "compact");
+        densityBtn.setAttribute(
+          "aria-pressed",
+          mode === "compact" ? "true" : "false"
+        );
+        densityBtn.textContent =
+          mode === "compact" ? "Cozy view" : "Compact view";
+        localStorage.setItem("tax:density", mode);
+        track("density_toggle", { mode });
+      }
+      densityBtn.addEventListener("click", () => {
+        const mode = document.body.classList.contains("compact")
+          ? "cozy"
+          : "compact";
+        applyDensity(mode);
+      });
+
+      function applySort(mode) {
+        sortMode = mode;
+        sortBtn.textContent =
+          sortMode === "percent" ? "Sort by amount" : "Sort by %";
+        sortBtn.setAttribute(
+          "aria-pressed",
+          sortMode === "amount" ? "true" : "false"
+        );
+        localStorage.setItem("tax:sort", sortMode);
+        compute(); // re-render
+        track("sort_toggle", { mode });
+      }
+      sortBtn.addEventListener("click", () =>
+        applySort(sortMode === "percent" ? "amount" : "percent")
+      );
+
+      // ------------------ Lazy-load jsPDF ------------------
+      async function ensureJsPDF() {
+        if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
+        await new Promise((ok, err) => {
+          const s = document.createElement("script");
+          s.src =
+            "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+          s.onload = ok;
+          s.onerror = err;
+          document.head.appendChild(s);
+        });
+        return window.jspdf.jsPDF;
+      }
 
       // PNG + PDF actions from menu
       pngItem.onclick = async () => {
@@ -1206,6 +1581,7 @@
           const fname = `${base}.png`;
           downloadBlob(blob, fname);
           showToast("Image downloaded");
+          track("download_png");
         } catch {
           showMsg("Could not generate image on this device.", true);
         }
@@ -1215,7 +1591,7 @@
           alert("Please calculate first.");
           return;
         }
-        const { jsPDF } = window.jspdf;
+        const jsPDF = await ensureJsPDF();
         const doc = new jsPDF({
           orientation: "portrait",
           unit: "pt",
@@ -1257,7 +1633,106 @@
           .replace(/\s+/g, "-")
           .toLowerCase()}.pdf`;
         doc.save(fname);
+        track("download_pdf");
       };
+
+      // ------------------ Keyboard shortcuts ------------------
+      document.addEventListener("keydown", (e) => {
+        if (out.classList.contains("hidden")) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const k = e.key.toLowerCase();
+        if (k === "e") {
+          emailBtn.click();
+        } else if (k === "p") {
+          pngItem.click();
+        } else if (k === "l") {
+          linkItem.click();
+        }
+      });
+
+      // ------------------ Help modal (loads help_content.html) ------------------
+      async function openHelp() {
+        lastFocus = document.activeElement;
+        helpOverlay.classList.add("show");
+        helpModal.classList.add("show");
+        helpOverlay.setAttribute("aria-hidden", "false");
+        track("help_open");
+
+        try {
+          const res = await fetch("help_content.html", { cache: "no-store" });
+          const html = res.ok
+            ? await res.text()
+            : '<p class="muted">Help content is unavailable right now.</p>';
+          document.getElementById("helpBody").innerHTML = html;
+        } catch {
+          document.getElementById("helpBody").innerHTML =
+            '<p class="muted">Help content is unavailable right now.</p>';
+        }
+        helpClose.focus();
+      }
+      function closeHelp() {
+        helpOverlay.classList.remove("show");
+        helpModal.classList.remove("show");
+        helpOverlay.setAttribute("aria-hidden", "true");
+        lastFocus?.focus();
+      }
+      helpBtn.addEventListener("click", openHelp);
+      helpClose.addEventListener("click", closeHelp);
+      helpOverlay.addEventListener("click", closeHelp);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && helpModal.classList.contains("show"))
+          closeHelp();
+      });
+
+      // ------------------ Events ------------------
+      function computeWrapper() {
+        compute();
+        linkItem.href = buildDeepLink(
+          wardSel.value,
+          parseAmount(amtInput.value)
+        );
+      }
+      calcBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        computeWrapper();
+      });
+      resetBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        amtInput.value = "";
+        out.classList.add("hidden");
+        showMsg("", false, true);
+        const url = new URL(location.href);
+        ["ward", "amount", "compare"].forEach((p) =>
+          url.searchParams.delete(p)
+        );
+        history.replaceState(null, "", url.toString());
+      });
+      amtInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          computeWrapper();
+        }
+      });
+      [wardSel, compareSel].forEach((sel) => {
+        sel.addEventListener("change", computeWrapper);
+        sel.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            computeWrapper();
+          }
+        });
+      });
+      amtInput.addEventListener("blur", formatAmountField);
+      amtInput.addEventListener("input", () => {
+        const ok = parseAmount(amtInput.value) > 0;
+        amtInput.classList.toggle(
+          "input-error",
+          !ok && amtInput.value.trim() !== ""
+        );
+        if (ok) {
+          msg.classList.add("hidden");
+        }
+      });
 
       // ------------------ Load data ------------------
       async function loadRates() {
@@ -1267,6 +1742,13 @@
           });
           if (!res.ok) throw new Error("missing JSON");
           WARD_DATA = await res.json();
+
+          const updated = WARD_DATA._meta?.updated;
+          if (updated) {
+            updatedStamp.textContent = `Percentages last updated: ${updated}`;
+            updatedStamp.classList.remove("hidden");
+            delete WARD_DATA._meta;
+          }
 
           const wards = Object.keys(WARD_DATA);
           wardSel.innerHTML = "";
@@ -1299,8 +1781,14 @@
             amtInput.value = (Number(lastAmt) / 100).toString();
           }
 
+          // Apply saved density & sort
+          applyDensity(localStorage.getItem("tax:density") || "cozy");
+          applySort(sortMode); // sets button label; compute will re-run anyway
+
+          loadingSkel.style.display = "none";
           if (qAmt || lastAmt) computeWrapper();
         } catch (e) {
+          loadingSkel.style.display = "none";
           showMsg(
             "Could not load ward_rates_2025.json. Ensure it sits next to index.html.",
             true
