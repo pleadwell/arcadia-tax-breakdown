@@ -1,393 +1,1316 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Arcadia Residential Property Tax Breakdown</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0d6efd" />
-  <link rel="icon" href="logo.svg" type="image/svg+xml" />
-  <meta property="og:title" content="Arcadia Residential Property Tax Breakdown" />
-  <meta property="og:description" content="Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny." />
-  <style>
-    :root{ --bg:#f7f8fa; --surface:#fff; --ink:#1f2937; --muted:#6b7280; --accent:#0d6efd; --border:#e5e7eb; --radius:12px; --shadow:0 6px 20px rgba(0,0,0,.06); }
-    *{ box-sizing:border-box }
-    body{ margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
-    .wrap{ max-width:960px; margin:32px auto; padding:0 16px; }
-    header{ margin-bottom:16px; }
-    h1{ font-size:clamp(22px,3.8vw,30px); margin:0 0 6px; }
-    p.lead{ color:var(--muted); margin:0 0 16px; }
-    .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; }
-    .grid{ display:grid; grid-template-columns:1fr; gap:12px; }
-    @media (min-width:820px){ .grid{ grid-template-columns: 1fr 1fr 1fr auto } }
-    label{ font-weight:600; font-size:14px; display:block; margin-bottom:6px; }
-    select, input[type="text"]{ width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:16px; background:#fff; }
-    .actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    button{ border:0; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; }
-    .primary{ background:var(--accent); color:#fff; }
-    .ghost{ background:#fff; border:1px solid var(--border); color:#111; }
-    .warn{ color:#7a2e0e; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:10px; }
-    .info{ color:#0b6b2f; background:#e8f5ec; border:1px solid #cce9d6; padding:10px 12px; border-radius:10px; }
-    table{ width:100%; border-collapse:collapse; margin-top:6px; }
-    th, td{ padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
-    th{ background:#f9fafb; font-size:14px; }
-    tr:last-child td{ border-bottom:0; }
-    .right{ text-align:right; white-space:nowrap; }
-    .bar{ height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden; width:100%; position:relative; }
-    .bar > span{ position:absolute; left:0; top:0; bottom:0; width:0%; background:var(--accent); }
-    tfoot td{ font-weight:700; }
-    .tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
-    .muted{ color:var(--muted); font-size:13px; }
-    .hidden{ display:none !important; }
-    header.brand{ display:flex; align-items:center; gap:12px; }
-    .brand-logo img.logo{ display:block; width:48px; height:48px; object-fit:contain; }
-    @media (max-width:480px){ .brand-logo img.logo{ width:40px; height:40px; } }
-    .contact{ margin-top:12px; display:grid; gap:8px; }
-    .contact .row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
-    .pill{ background:#f1f5f9; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:14px; }
-    .label{ font-weight:700; color:#111827; }
-    .address{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header class="brand">
-      <div class="brand-logo"><img class="logo" src="./logo.svg" alt="Arcadia" width="48" height="48" decoding="async" fetchpriority="high" onerror="this.style.display='none'"/></div>
-      <div>
-        <h1>Arcadia Residential Property Tax Breakdown</h1>
-        <p class="lead">Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny.</p>
-      </div>
-    </header>
+  <head>
+    <meta charset="utf-8" />
+    <title>Arcadia Residential Property Tax Breakdown</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0d6efd" />
+    <link rel="icon" href="logo.svg" type="image/svg+xml" />
+    <meta
+      property="og:title"
+      content="Arcadia Residential Property Tax Breakdown"
+    />
+    <meta
+      property="og:description"
+      content="Pick your specific ward, enter your annual property tax bill, and see how your property tax dollars are being spent across the 12 budget categories. The totals match your bill to the penny."
+    />
 
-    <section class="card" aria-label="Inputs">
-      <div class="grid">
-        <div><label for="ward">Ward</label><select id="ward"></select></div>
-        <div><label for="compareWard">Compare to (optional)</label><select id="compareWard"><option value="">— no comparison —</option></select></div>
-        <div><label for="amount">Property tax bill (annual, CAD)</label><input id="amount" inputmode="decimal" placeholder="e.g., 2,400" /></div>
-        <div class="actions" style="align-self:end;"><button class="primary" id="calcBtn">Calculate</button><button class="ghost" id="resetBtn">Reset</button></div>
-      </div>
-      <div id="msg" class="warn hidden" role="status" aria-live="polite"></div>
-    </section>
-
-    <section id="outCard" class="card hidden" aria-label="Results">
-      <div class="tools">
-        <button class="ghost" id="shareBtn">Share on Facebook</button>
-        <button class="primary" id="emailBtn">Email my councillor &amp; mayor</button>
-        <button class="ghost" id="pngBtn">Download image (PNG)</button>
-        <button class="ghost" id="pdfBtn">Download PDF</button>
-        <a id="linkBtn" class="ghost" href="#" target="_blank">Open shareable link</a>
-        <button class="ghost" id="copyEmailBtn">Copy email text</button>
-        <button class="ghost" id="copyAddrsBtn">Copy email addresses</button>
-        <button class="ghost" id="copyBtn">Copy summary</button>
-      </div>
-      <p><strong>You can send an email now to your Councillor, Mayor and the Arcadia office.</strong></p>
-      <div class="contact">
-        <div class="row"><span class="label">Councillor:</span><span id="cName" class="pill">—</span><span id="cEmail" class="pill address">—</span></div>
-        <div class="row"><span class="label">Mayor:</span><span id="mName" class="pill">Clinton Sharpe</span><span id="mEmail" class="pill address">clinton.sharpe@arcadianb.ca</span></div>
-        <div class="row"><span class="label">Queries CC list:</span><span id="ccList" class="pill address">info@arcadianb.ca, Karrie.Bedford@arcadianb.ca, Jessica.Mcgarity@arcadianb.ca</span></div>
-      </div>
-
-      <table id="resultsTable" aria-label="Breakdown table">
-        <thead>
-          <tr>
-            <th>Budget Category</th>
-            <th class="right">% (Ward)</th>
-            <th style="width:35%">Allocation (Ward)</th>
-            <th class="right">Amount (CAD)</th>
-            <th class="right hidden" id="cmpHeadPct">% (Compare)</th>
-            <th class="hidden" id="cmpHeadBar">Allocation (Compare)</th>
-            <th class="right hidden" id="cmpHeadAmt">Amount (CAD)</th>
-            <th class="right hidden" id="diffHead">Diff (Ward−Compare)</th>
-          </tr>
-        </thead>
-        <tbody id="resultsBody"></tbody>
-        <tfoot>
-          <tr>
-            <td><strong>This is my Property Tax total</strong></td>
-            <td class="right" id="totalPct">100%</td>
-            <td></td>
-            <td class="right" id="totalAmt">—</td>
-            <td class="right hidden" id="cmpTotalPct">—</td>
-            <td class="hidden"></td>
-            <td class="right hidden" id="cmpTotalAmt">—</td>
-            <td class="right hidden" id="diffTotal">—</td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <div id="note" class="info hidden" style="margin-top:10px;"></div>
-      <p class="muted">Rounding is distributed so the sum equals your exact bill. If ward percentages don’t sum to 100%, values are normalized.</p>
-    </section>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script>
-    let WARD_DATA = {};
-    let lastMergedWard=null, lastTotalCents=0, lastWardName='', lastMergedCmp=null, lastCmpName='';
-
-    const wardSel=document.getElementById('ward'), compareSel=document.getElementById('compareWard'), amtInput=document.getElementById('amount');
-    const calcBtn=document.getElementById('calcBtn'), resetBtn=document.getElementById('resetBtn');
-    const out=document.getElementById('outCard'), msg=document.getElementById('msg'), note=document.getElementById('note');
-    const resultsBody=document.getElementById('resultsBody'), totalPct=document.getElementById('totalPct'), totalAmt=document.getElementById('totalAmt');
-    const cmpHeadPct=document.getElementById('cmpHeadPct'), cmpHeadBar=document.getElementById('cmpHeadBar'), cmpHeadAmt=document.getElementById('cmpHeadAmt'), diffHead=document.getElementById('diffHead');
-    const cmpTotalPct=document.getElementById('cmpTotalPct'), cmpTotalAmt=document.getElementById('cmpTotalAmt'), diffTotal=document.getElementById('diffTotal');
-
-    const shareBtn=document.getElementById('shareBtn'), linkBtn=document.getElementById('linkBtn'), emailBtn=document.getElementById('emailBtn'), copyEmailBtn=document.getElementById('copyEmailBtn'), copyAddrsBtn=document.getElementById('copyAddrsBtn'), copyBtn=document.getElementById('copyBtn'), pngBtn=document.getElementById('pngBtn'), pdfBtn=document.getElementById('pdfBtn');
-
-    const CONTACTS = {
-      "Upper Gagetown (Ward 1)": { name: "Tammy Gordon", email: "tammy.gordon@arcadianb.ca" },
-      "Gagetown (Ward 2)": { name: "Paul Mennier", email: "paul.mennier@arcadianb.ca" },
-      "Hampstead (Ward 3)": { name: "Harry Thomson", email: "harry.thomson@arcadianb.ca" },
-      "Cambridge (Ward 4)": { name: "Deputy Mayor Steven Sharpe", email: "steven.sharpe@arcadianb.ca" },
-      "Cambridge Narrows (Ward 5)": { name: "Sheila Black", email: "Sheila.black@arcadianb.ca" },
-      "Waterborough (Ward 6)": { name: "Paula Gahan-McGee", email: "Paula.gahan-magee@arcadianb.ca" }
-    };
-    const MAYOR = { name: "Clinton Sharpe", email: "clinton.sharpe@arcadianb.ca" };
-    const QUERY_CC = ["info@arcadianb.ca","Karrie.Bedford@arcadianb.ca","Jessica.Mcgarity@arcadianb.ca"];
-
-    function showMsg(text,isError=false,clear=false){ if(clear||!text){ msg.classList.add('hidden'); msg.textContent=''; return; } msg.textContent=text; msg.className=(isError?'warn':'info'); }
-    const fmtMoney=c=>new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format((c||0)/100);
-    function parseAmount(s){ if(typeof s!=='string') return 0; s=s.trim().replace(/[^\d.,-]/g,''); if(s.includes(',')&&s.includes('.')) s=s.replace(/,/g,''); else if(s.includes(',')&&!s.includes('.')) s=s.replace(',', '.'); const n=Number(s); return isFinite(n)?Math.max(0,Math.round(n*100)):0; }
-
-    async function loadRates(){
-      try{
-        const res=await fetch('ward_rates_2025.json',{cache:'no-store'});
-        if(!res.ok) throw new Error('missing JSON');
-        WARD_DATA=await res.json();
-        const wards=Object.keys(WARD_DATA);
-        console.log('Loaded', wards.length, 'wards', wards);
-        // populate selects
-        wardSel.innerHTML=''; compareSel.innerHTML="<option value=''>— no comparison —</option>";
-        wards.forEach(w=>{ const o=document.createElement('option'); o.textContent=w; wardSel.appendChild(o);
-                           const o2=document.createElement('option'); o2.value=w; o2.textContent=w; compareSel.appendChild(o2); });
-        // deep link
-        const url=new URL(location.href);
-        const qWard=url.searchParams.get('ward'); const qAmt=url.searchParams.get('amount'); const qCmp=url.searchParams.get('compare');
-        if(qWard && WARD_DATA[qWard]) wardSel.value=qWard;
-        if(qCmp && WARD_DATA[qCmp]) compareSel.value=qCmp;
-        if(qAmt){ amtInput.value=qAmt; compute(); }
-      }catch(e){
-        showMsg('Could not load ward_rates_2025.json. Ensure it sits next to index.html.', true);
-        console.error(e);
+    <style>
+      :root {
+        --bg: #f7f8fa;
+        --surface: #fff;
+        --ink: #1f2937;
+        --muted: #6b7280;
+        --accent: #0d6efd;
+        --border: #e5e7eb;
+        --radius: 12px;
+        --shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
       }
-    }
-    window.addEventListener('DOMContentLoaded', loadRates);
-
-    function normalizePairs(catObj){
-      const entries=Object.entries(catObj).map(([k,v])=>[k, Number(v.percent||0), String(v.explain||'')]);
-      const sum=entries.reduce((t,[,p])=>t+p,0);
-      if(sum===0) return entries.map(([k])=>[k,0,'']);
-      return entries.map(([k,p,x])=>[k,(p/sum)*100,x]);
-    }
-    function allocateCents(totalCents, pairs){
-      const raw=pairs.map(([k,p])=>[k,p,totalCents*(p/100)]);
-      const floors=raw.map(([k,p,v])=>[k,p,Math.floor(v)]);
-      const rema=raw.map(([k,p,v],i)=>[k,p,v-floors[i][2]]);
-      let used=floors.reduce((t,[, ,c])=>t+c,0);
-      let need=Math.round(raw.reduce((t,[, ,v])=>t+v,0))-used;
-      rema.sort((a,b)=>b[2]-a[2]);
-      const out=new Map(floors.map(([k,p,c])=>[k,{percent:p,cents:c}]));
-      for(let i=0;i<rema.length && need>0;i++,need--){ const k=rema[i][0]; out.get(k).cents+=1; }
-      return out;
-    }
-    function asSortedRows(map, explainMap){
-      const rows=Array.from(map.entries()).map(([k,obj])=>({category:k, percent:obj.percent, cents:obj.cents, explain:(explainMap[k]?.explain)||''}));
-      rows.sort((a,b)=>b.percent-a.percent); return rows;
-    }
-    function buildDeepLink(ward, amount){ const url=new URL(location.href); url.searchParams.set('ward',ward); url.searchParams.set('amount',(amount/100).toString()); const cmp=compareSel.value||''; if(cmp) url.searchParams.set('compare',cmp); else url.searchParams.delete('compare'); return url.toString(); }
-    function buildMailto(to,cc,subject,body){ const qs=new URLSearchParams(); if(cc?.length) qs.set('cc', cc.join(',')); qs.set('subject',subject); qs.set('body',body); return `mailto:${to.join(',')}?${qs.toString()}`; }
-
-    function compute(){
-      const ward=wardSel.value; const compareWard=compareSel.value||''; const amountCents=parseAmount(amtInput.value);
-      if(!WARD_DATA[ward]){ showMsg('Choose a valid ward.', true); out.classList.add('hidden'); return; }
-      if(!amountCents){ showMsg('Enter a valid bill amount (e.g., 2400).', true); out.classList.add('hidden'); return; }
-
-      const cats=WARD_DATA[ward];
-      const pairs=normalizePairs(cats);
-      const sumRaw=Object.values(cats).reduce((t,v)=>t+Number(v.percent||0),0);
-      if(Math.abs(sumRaw-100)>0.001){ note.textContent=`Note: ${ward} percentages sum to ${sumRaw.toFixed(2)}%. Values have been normalized to 100%.`; note.classList.remove('hidden'); } else note.classList.add('hidden');
-      const alloc=allocateCents(amountCents, pairs);
-      const rows=asSortedRows(alloc, cats);
-
-      // compare
-      let cmpRows=null, cmpTotal=0;
-      if(compareWard && WARD_DATA[compareWard]){
-        const c2=WARD_DATA[compareWard]; const p2=normalizePairs(c2); const a2=allocateCents(amountCents, p2);
-        cmpRows=asSortedRows(a2, c2); cmpTotal=Array.from(a2.values()).reduce((t,o)=>t+o.cents,0);
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 32px auto;
+        padding: 0 16px;
+      }
+      header {
+        margin-bottom: 16px;
+      }
+      h1 {
+        font-size: clamp(22px, 3.8vw, 30px);
+        margin: 0 0 6px;
+      }
+      p.lead {
+        color: var(--muted);
+        margin: 0 0 16px;
       }
 
-      // render table
-      resultsBody.innerHTML='';
-      const lookupCmp = cmpRows ? Object.fromEntries(cmpRows.map(r=>[r.category,r])) : {};
-      rows.forEach(r=>{
-        const tr=document.createElement('tr');
-
-        const tdCat=document.createElement('td');
-        tdCat.innerHTML = `<div><strong>${r.category}</strong></div><div class="muted">${r.explain||''}</div>`;
-
-        const tdPct=document.createElement('td'); tdPct.className='right'; tdPct.textContent=`${r.percent.toFixed(2)}%`;
-
-        const tdBar=document.createElement('td'); const bar=document.createElement('div'); bar.className='bar';
-        const fill=document.createElement('span'); fill.style.width=`${r.percent.toFixed(6)}%`; bar.appendChild(fill); tdBar.appendChild(bar);
-
-        const tdAmt=document.createElement('td'); tdAmt.className='right'; tdAmt.textContent = fmtMoney(r.cents);
-
-        tr.append(tdCat, tdPct, tdBar, tdAmt);
-
-        if (cmpRows){
-          const match=lookupCmp[r.category] || {percent:0,cents:0};
-          const tdPct2=document.createElement('td'); tdPct2.className='right'; tdPct2.textContent=`${match.percent.toFixed(2)}%`;
-          const tdBar2=document.createElement('td'); const bar2=document.createElement('div'); bar2.className='bar';
-          const fill2=document.createElement('span'); fill2.style.width=`${match.percent.toFixed(6)}%`; bar2.appendChild(fill2); tdBar2.appendChild(bar2);
-          const tdAmt2=document.createElement('td'); tdAmt2.className='right'; tdAmt2.textContent=fmtMoney(match.cents);
-          const tdDiff=document.createElement('td'); tdDiff.className='right'; const delta=r.cents-match.cents; tdDiff.textContent=`${delta>=0?'+':''}${fmtMoney(delta)}`;
-          tr.append(tdPct2, tdBar2, tdAmt2, tdDiff);
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      @media (min-width: 820px) {
+        .grid {
+          grid-template-columns: 1fr 1fr 1fr auto;
         }
-        resultsBody.appendChild(tr);
-      });
-
-      const total=Array.from(alloc.values()).reduce((t,o)=>t+o.cents,0);
-      totalPct.textContent="100%"; totalAmt.textContent=fmtMoney(total);
-
-      const showCmp=Boolean(cmpRows);
-      [cmpHeadPct,cmpHeadBar,cmpHeadAmt,diffHead,cmpTotalPct,cmpTotalAmt,diffTotal].forEach(el=>el.classList.toggle('hidden', !showCmp));
-      if(showCmp){ cmpTotalPct.textContent="100%"; cmpTotalAmt.textContent=fmtMoney(cmpTotal); diffTotal.textContent=fmtMoney(total-cmpTotal); }
-
-      // contacts
-      const ctr=CONTACTS[ward]||{}; document.getElementById('cName').textContent=ctr.name||'—'; document.getElementById('cEmail').textContent=ctr.email||'—'; document.getElementById('ccList').textContent=QUERY_CC.join(', ');
-
-      // tools
-      const link=buildDeepLink(ward, amountCents); linkBtn.href=link;
-      shareBtn.onclick=()=>{ const u=encodeURIComponent(link); window.open(`https://www.facebook.com/sharer/sharer.php?u=${u}`,'fbshare','width=640,height=600'); };
-
-      const subject=`Question re 2026 plan — ${ward} property tax breakdown`;
-      const greeting=`Hello ${(ctr.name||'Councillor')}, and Clinton Sharpe,`;
-      const lines=[greeting,"",`My annual property tax bill for ${ward} is ${fmtMoney(amountCents)}.`,"Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?","", "I've attached an image or PDF of the breakdown for your reference.", `Shareable link: ${link}`,"","Thank you,"];
-      const body=lines.join('\n');
-
-      emailBtn.onclick=()=>{ const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean); const qs=new URLSearchParams(); qs.set('cc', QUERY_CC.join(',')); qs.set('subject',subject); qs.set('body',body); const mailto=`mailto:${to.join(',')}?${qs.toString()}`; try{ location.href=mailto; }catch{ window.open(mailto,'_blank'); } };
-      copyEmailBtn.onclick=async()=>{ try{ await navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`); showMsg('Email text copied.', false);}catch{showMsg('Copy failed.', true);} };
-      copyAddrsBtn.onclick=async()=>{ const to=[ctr.email||'',"clinton.sharpe@arcadianb.ca"].filter(Boolean).join(', '); const cc=QUERY_CC.join(', '); try{ await navigator.clipboard.writeText(`To: ${to}\nCc: ${cc}`); showMsg('Email addresses copied.', false);}catch{showMsg('Copy failed.', true);} };
-      copyBtn.onclick=async()=>{ try{ await navigator.clipboard.writeText(rows.map(r=>`${r.category}: ${r.percent.toFixed(2)}% = ${fmtMoney(r.cents)}`).join('\n')); showMsg('Summary copied.', false);}catch{showMsg('Copy failed.', true);} };
-
-      // save for export
-      lastMergedWard=rows; lastTotalCents=total; lastWardName=ward; lastMergedCmp=cmpRows; lastCmpName=compareWard;
-
-      out.classList.remove('hidden'); showMsg('',false,true);
-      history.replaceState(null,'',link);
-    }
-
-    function computeWrapper(){ compute(); const link=buildDeepLink(wardSel.value, parseAmount(amtInput.value)); linkBtn.href=link; }
-
-    calcBtn.addEventListener('click', e=>{ e.preventDefault(); computeWrapper(); });
-    resetBtn.addEventListener('click', e=>{ e.preventDefault(); amtInput.value=''; out.classList.add('hidden'); showMsg('',false,true); const url=new URL(location.href); ['ward','amount','compare'].forEach(p=>url.searchParams.delete(p)); history.replaceState(null,'',url.toString()); });
-    amtInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); computeWrapper(); } });
-
-    // PNG export
-    function truncate(ctx, text, maxW){ if(ctx.measureText(text).width<=maxW) return text; let e='…', n=text.length; while(n>0 && ctx.measureText(text.slice(0,n)+e).width>maxW) n--; return text.slice(0,n)+e; }
-    async function generateTablePNG(ward, rows, totalCents, compareWard, cmpRows, cmpTotal){
-      const hasCmp=!!(compareWard && cmpRows);
-      const pad=24,rowH=40,headH=48,footH=54;
-      const colCat=360,colPct=100,colBar=260,colAmt=160;
-      const colPct2=hasCmp?100:0,colBar2=hasCmp?260:0,colAmt2=hasCmp?160:0,colDiff=hasCmp?160:0;
-      const innerW=colCat+colPct+colBar+colAmt+colPct2+colBar2+colAmt2+colDiff;
-      const width=pad*2+innerW, height=pad+headH+(rows.length*rowH)+footH+pad;
-      const scale=Math.min(window.devicePixelRatio||2,3);
-      const canvas=document.createElement('canvas'); canvas.width=Math.round(width*scale); canvas.height=Math.round(height*scale);
-      const ctx=canvas.getContext('2d'); ctx.scale(scale,scale);
-      const mono='ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; const sans='system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
-
-      ctx.fillStyle='#fff'; ctx.fillRect(0,0,width,height);
-      ctx.fillStyle='#f9fafb'; ctx.fillRect(pad,pad,innerW,headH);
-      ctx.fillStyle='#111827'; ctx.font='700 16px '+sans;
-
-      let x=pad,y=pad+30;
-      ctx.fillText('Budget Category', x+4, y); x+=colCat;
-      ctx.fillText('% (Ward)', x+colPct-ctx.measureText('% (Ward)').width-8, y); x+=colPct;
-      ctx.fillText('Allocation (Ward)', x+8, y); x+=colBar;
-      ctx.fillText('Amount (CAD)', x+colAmt-ctx.measureText('Amount (CAD)').width-8, y); x+=colAmt;
-      if (hasCmp){
-        ctx.fillText('% (Compare)', x+colPct2-ctx.measureText('% (Compare)').width-8, y); x+=colPct2;
-        ctx.fillText('Allocation (Compare)', x+8, y); x+=colBar2;
-        ctx.fillText('Amount (CAD)', x+colAmt2-ctx.measureText('Amount (CAD)').width-8, y); x+=colAmt2;
-        ctx.fillText('Diff', x+colDiff-ctx.measureText('Diff').width-8, y);
       }
 
-      let cy=pad+headH;
-      rows.forEach(r=>{
-        let cx=pad; const yMid=cy+rowH/2;
-        ctx.fillStyle='#111827'; ctx.font='600 14px '+sans;
-        ctx.fillText(truncate(ctx, r.category, colCat-8), cx+4, yMid-4);
-        if(r.explain){ ctx.fillStyle='#6b7280'; ctx.font='400 12px '+sans; ctx.fillText(truncate(ctx, r.explain, colCat-8), cx+4, yMid+12); }
-        cx+=colCat;
+      label {
+        font-weight: 600;
+        font-size: 14px;
+        display: block;
+        margin-bottom: 6px;
+      }
+      select,
+      input[type="text"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 16px;
+        background: #fff;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .ghost {
+        background: #fff;
+        border: 1px solid var(--border);
+        color: #111;
+      }
 
-        ctx.fillStyle='#111827'; ctx.textAlign='right'; ctx.font='500 14px '+mono; ctx.fillText(r.percent.toFixed(2)+'%', cx+colPct-4, yMid+5); ctx.textAlign='left'; cx+=colPct;
+      .warn {
+        color: #7a2e0e;
+        background: #fff7ed;
+        border: 1px solid #ffedd5;
+        padding: 10px 12px;
+        border-radius: 10px;
+      }
+      .info {
+        color: #0b6b2f;
+        background: #e8f5ec;
+        border: 1px solid #cce9d6;
+        padding: 10px 12px;
+        border-radius: 10px;
+      }
 
-        ctx.fillStyle='#e5e7eb'; ctx.fillRect(cx+4, yMid-6, colBar-8, 12);
-        ctx.fillStyle='#0d6efd'; ctx.fillRect(cx+4, yMid-6, Math.max(0,(colBar-8)*(r.percent/100)), 12); cx+=colBar;
+      /* tools row */
+      .tools {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        align-items: center;
+      }
 
-        ctx.textAlign='right'; ctx.font='600 14px '+mono; ctx.fillStyle='#111827'; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(r.cents/100), cx+colAmt-4, yMid+5); ctx.textAlign='left'; cx+=colAmt;
+      /* More… menu */
+      .menu-wrap {
+        position: relative;
+      }
+      .menu-btn {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+      }
+      .menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        min-width: 220px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 6px;
+        display: none;
+        z-index: 10;
+      }
+      .menu.show {
+        display: block;
+      }
+      .menu a,
+      .menu button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .menu a:hover,
+      .menu button:hover {
+        background: #f3f4f6;
+      }
 
-        if (hasCmp){
-          const match=(cmpRows.find(rr=>rr.category===r.category))||{percent:0,cents:0};
-          ctx.textAlign='right'; ctx.font='500 14px '+mono; ctx.fillText(match.percent.toFixed(2)+'%', cx+colPct2-4, yMid+5); ctx.textAlign='left'; cx+=colPct2;
-          ctx.fillStyle='#e5e7eb'; ctx.fillRect(cx+4, yMid-6, colBar2-8, 12);
-          ctx.fillStyle='#0d6efd'; ctx.fillRect(cx+4, yMid-6, Math.max(0,(colBar2-8)*(match.percent/100)), 12); cx+=colBar2;
-          ctx.textAlign='right'; ctx.font='600 14px '+mono; ctx.fillStyle='#111827'; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(match.cents/100), cx+colAmt2-4, yMid+5); ctx.textAlign='left'; cx+=colAmt2;
-          const delta=r.cents-match.cents; ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillStyle= delta>=0 ? '#14532d' : '#7a2e0e';
-          ctx.fillText((delta>=0?'+':'')+new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(delta/100), cx+colDiff-4, yMid+5); ctx.textAlign='left';
+      /* contact pills & overflow fixes */
+      .contact {
+        margin-top: 12px;
+        display: grid;
+        gap: 8px;
+      }
+      .contact .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      .pill {
+        background: #f1f5f9;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 14px;
+      }
+      .label {
+        font-weight: 700;
+        color: #111827;
+      }
+      .address {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      /* table & bars (denser + numeric alignment) */
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+        table-layout: fixed;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #f9fafb;
+        font-size: 13px;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .right {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .bar {
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+        width: 100%;
+        position: relative;
+      }
+      .bar > span {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0%;
+        background: var(--accent);
+      }
+
+      /* clamp long notes */
+      .category-explain {
+        color: var(--muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      tfoot td {
+        font-weight: 700;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .hidden {
+        display: none !important;
+      }
+
+      header.brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .brand-logo img.logo {
+        display: block;
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+      }
+      @media (max-width: 480px) {
+        .brand-logo img.logo {
+          width: 40px;
+          height: 40px;
         }
-        ctx.strokeStyle='#e5e7eb'; ctx.beginPath(); ctx.moveTo(pad, cy+rowH); ctx.lineTo(pad+innerW, cy+rowH); ctx.stroke();
-        cy+=rowH;
+      }
+
+      /* compare banner + responsive card grid */
+      .compare-banner {
+        margin: 10px 0 6px;
+        font-weight: 700;
+      }
+      .compare-grid {
+        display: grid;
+        gap: 10px;
+      }
+      @media (min-width: 900px) {
+        .compare-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .compare-grid table th:nth-child(1) {
+          width: 40%;
+        }
+        .compare-grid table th:nth-child(2) {
+          width: 12ch;
+        }
+        .compare-grid table th:nth-child(3) {
+          width: 40%;
+        }
+        .compare-grid table th:nth-child(4) {
+          width: 12ch;
+        }
+        .compare-grid .card {
+          padding: 12px;
+        }
+      }
+      .compare-card-title {
+        font-weight: 700;
+        margin: 2px 0 8px;
+      }
+
+      /* inline errors */
+      .input-error {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+      }
+
+      /* toast */
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        background: #111827;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 999px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        font-size: 14px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-4px);
+      }
+
+      @media print {
+        .tools,
+        .actions,
+        .menu-wrap,
+        #moreBtn {
+          display: none !important;
+        }
+        .card {
+          box-shadow: none;
+          border-color: #ddd;
+        }
+        .wrap {
+          max-width: 900px;
+          margin: 0;
+        }
+        .bar {
+          height: 6px;
+        }
+        .muted {
+          color: #444;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="brand">
+        <div class="brand-logo">
+          <img
+            class="logo"
+            src="./logo.svg"
+            alt="Arcadia"
+            width="48"
+            height="48"
+            decoding="async"
+            fetchpriority="high"
+            onerror="this.style.display='none'"
+          />
+        </div>
+        <div>
+          <h1>Arcadia Residential Property Tax Breakdown</h1>
+          <p class="lead">
+            Pick your specific ward, enter your annual property tax bill, and
+            see how your property tax dollars are being spent across the 12
+            budget categories. The totals match your bill to the penny.
+          </p>
+        </div>
+      </header>
+
+      <section class="card" aria-label="Inputs">
+        <div class="grid">
+          <div>
+            <label for="ward">Ward</label
+            ><select id="ward"></select>
+          </div>
+          <div>
+            <label for="compareWard">Compare to (optional)</label
+            ><select id="compareWard">
+              <option value="">— no comparison —</option>
+            </select>
+          </div>
+          <div>
+            <label for="amount">Property tax bill (annual, CAD)</label
+            ><input id="amount" inputmode="decimal" placeholder="e.g., 2,400" />
+          </div>
+          <div class="actions" style="align-self: end">
+            <button class="primary" id="calcBtn">Calculate</button
+            ><button class="ghost" id="resetBtn">Reset</button>
+          </div>
+        </div>
+        <div
+          id="msg"
+          class="warn hidden"
+          role="status"
+          aria-live="polite"
+        ></div>
+      </section>
+
+      <section id="outCard" class="card hidden" aria-label="Results">
+        <div class="tools">
+          <button class="ghost" id="shareBtn">Share on Facebook</button>
+          <button class="primary" id="emailBtn">
+            Email my councillor &amp; mayor
+          </button>
+
+          <div class="menu-wrap">
+            <button
+              class="menu-btn"
+              id="moreBtn"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              More…
+            </button>
+            <div
+              class="menu"
+              id="moreMenu"
+              role="menu"
+              aria-label="More actions"
+            >
+              <button id="pngItem" role="menuitem">Download image (PNG)</button>
+              <button id="pdfItem" role="menuitem">Download PDF</button>
+              <a id="linkItem" role="menuitem" href="#" target="_blank"
+                >Open shareable link</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <p>
+          <strong
+            >You can send an email now to your Councillor, Mayor and the Arcadia
+            office.</strong
+          >
+        </p>
+        <div class="contact">
+          <div class="row">
+            <span class="label">Councillor:</span
+            ><span id="cName" class="pill">—</span
+            ><span id="cEmail" class="pill address">—</span>
+          </div>
+          <div class="row">
+            <span class="label">Mayor:</span
+            ><span id="mName" class="pill">Clinton Sharpe</span
+            ><span id="mEmail" class="pill address"
+              >clinton.sharpe@arcadianb.ca</span
+            >
+          </div>
+          <div class="row">
+            <span class="label">Queries CC list:</span
+            ><span id="ccList" class="pill address"
+              >info@arcadianb.ca, Karrie.Bedford@arcadianb.ca,
+              Jessica.Mcgarity@arcadianb.ca</span
+            >
+          </div>
+        </div>
+
+        <!-- compare banner + compare cards -->
+        <div id="compareBanner" class="compare-banner hidden"></div>
+        <div id="compareWrap" class="compare-grid hidden"></div>
+
+        <!-- single-table title + table (used when NOT comparing) -->
+        <div id="singleTitle" class="compare-card-title hidden"></div>
+        <div id="singleWrap" class="table-wrap">
+          <table id="resultsTable" aria-label="Breakdown table">
+            <thead>
+              <tr>
+                <th>Budget Category</th>
+                <th class="right" id="wardHeadPct">%</th>
+                <th style="width: 35%" id="wardHeadBar">Allocation</th>
+                <th class="right" id="wardHeadAmt">Amount (CAD)</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+            <tfoot>
+              <tr>
+                <td><strong>This is my Property Tax total</strong></td>
+                <td class="right" id="totalPct">100%</td>
+                <td></td>
+                <td class="right" id="totalAmt">—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div id="note" class="info hidden" style="margin-top: 10px"></div>
+        <p class="muted">
+          Rounding is distributed so the sum equals your exact bill. If ward
+          percentages don’t sum to 100%, values are normalized.
+        </p>
+      </section>
+    </div>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+      // ------------------ State ------------------
+      let WARD_DATA = {};
+      let lastMergedWard = null,
+        lastTotalCents = 0,
+        lastWardName = "";
+      let lastMergedCmp = null,
+        lastCmpName = "",
+        lastCmpTotal = 0;
+
+      // ------------------ Elements ------------------
+      const wardSel = document.getElementById("ward");
+      const compareSel = document.getElementById("compareWard");
+      const amtInput = document.getElementById("amount");
+      const calcBtn = document.getElementById("calcBtn");
+      const resetBtn = document.getElementById("resetBtn");
+
+      const out = document.getElementById("outCard");
+      const msg = document.getElementById("msg");
+      const note = document.getElementById("note");
+
+      const singleTitle = document.getElementById("singleTitle");
+      const singleWrap = document.getElementById("singleWrap");
+      const resultsBody = document.getElementById("resultsBody");
+      const totalPct = document.getElementById("totalPct");
+      const totalAmt = document.getElementById("totalAmt");
+
+      const wardHeadPct = document.getElementById("wardHeadPct");
+      const wardHeadBar = document.getElementById("wardHeadBar");
+      const wardHeadAmt = document.getElementById("wardHeadAmt");
+
+      const compareWrap = document.getElementById("compareWrap");
+      const compareBanner = document.getElementById("compareBanner");
+
+      const shareBtn = document.getElementById("shareBtn");
+      const emailBtn = document.getElementById("emailBtn");
+      const moreBtn = document.getElementById("moreBtn");
+      const moreMenu = document.getElementById("moreMenu");
+      const pngItem = document.getElementById("pngItem");
+      const pdfItem = document.getElementById("pdfItem");
+      const linkItem = document.getElementById("linkItem");
+
+      const cName = document.getElementById("cName");
+      const cEmail = document.getElementById("cEmail");
+      const ccListEl = document.getElementById("ccList");
+
+      const MAYOR = {
+        name: "Clinton Sharpe",
+        email: "clinton.sharpe@arcadianb.ca",
+      };
+      const QUERY_CC = [
+        "info@arcadianb.ca",
+        "Karrie.Bedford@arcadianb.ca",
+        "Jessica.Mcgarity@arcadianb.ca",
+      ];
+
+      const CONTACTS = {
+        "Upper Gagetown (Ward 1)": {
+          name: "Tammy Gordon",
+          email: "tammy.gordon@arcadianb.ca",
+        },
+        "Gagetown (Ward 2)": {
+          name: "Paul Mennier",
+          email: "paul.mennier@arcadianb.ca",
+        },
+        "Hampstead (Ward 3)": {
+          name: "Harry Thomson",
+          email: "harry.thomson@arcadianb.ca",
+        },
+        "Cambridge (Ward 4)": {
+          name: "Deputy Mayor Steven Sharpe",
+          email: "steven.sharpe@arcadianb.ca",
+        },
+        "Cambridge Narrows (Ward 5)": {
+          name: "Sheila Black",
+          email: "Sheila.black@arcadianb.ca",
+        },
+        "Waterborough (Ward 6)": {
+          name: "Paula Gahan-McGee",
+          email: "Paula.gahan-magee@arcadianb.ca",
+        },
+      };
+
+      // ------------------ Category colors ------------------
+      const CATEGORY_COLORS = {
+        Education: "#2563eb",
+        "Public Safety": "#16a34a",
+        Infrastructure: "#f59e0b",
+        Health: "#dc2626",
+        Parks: "#9333ea",
+        Transportation: "#0ea5e9",
+        "Fire Services": "#ef4444",
+        "Social Services": "#14b8a6",
+        Administration: "#8b5cf6",
+        "Debt Services": "#64748b",
+        Environmental: "#22c55e",
+        Emergency: "#fb7185",
+      };
+      const fallbackColor = "#0d6efd";
+      const colorFor = (cat) => CATEGORY_COLORS[cat] || fallbackColor;
+
+      // ------------------ Utils ------------------
+      function showMsg(text, isError = false, clear = false) {
+        if (clear || !text) {
+          msg.classList.add("hidden");
+          msg.textContent = "";
+          return;
+        }
+        msg.textContent = text;
+        msg.className = isError ? "warn" : "info";
+        msg.classList.remove("hidden");
+      }
+      function showToast(text) {
+        const t = document.getElementById("toast");
+        if (!t) return;
+        t.textContent = text;
+        t.classList.add("show");
+        clearTimeout(showToast._tid);
+        showToast._tid = setTimeout(() => t.classList.remove("show"), 1800);
+      }
+      const fmtMoney = (c) =>
+        new Intl.NumberFormat("en-CA", {
+          style: "currency",
+          currency: "CAD",
+        }).format((c || 0) / 100);
+      function parseAmount(s) {
+        if (typeof s !== "string") return 0;
+        s = s.trim().replace(/[^\d.,-]/g, "");
+        if (s.includes(",") && s.includes("."))
+          s = s.replace(/,/g, ""); // 1,234.56
+        else if (s.includes(",") && !s.includes(".")) s = s.replace(",", "."); // 1234,56
+        const n = Number(s);
+        return isFinite(n) ? Math.max(0, Math.round(n * 100)) : 0;
+      }
+      function formatAmountField() {
+        const cents = parseAmount(amtInput.value);
+        if (!cents) return;
+        amtInput.value = new Intl.NumberFormat("en-CA", {
+          style: "currency",
+          currency: "CAD",
+        }).format(cents / 100);
+      }
+
+      // Robust percent parsing
+      function toNumPercent(x) {
+        if (typeof x === "number") return x;
+        if (typeof x === "string") {
+          let s = x
+            .trim()
+            .replace("%", "")
+            .replace(/[^\d.,-]/g, "");
+          if (s.includes(",") && s.includes(".")) s = s.replace(/,/g, "");
+          else if (s.includes(",") && !s.includes(".")) s = s.replace(",", ".");
+          const n = Number(s);
+          return Number.isFinite(n) ? n : 0;
+        }
+        return 0;
+      }
+      function pickPercentField(v) {
+        if (v && typeof v === "object") {
+          const keys = [
+            "percent",
+            "Percent",
+            "pct",
+            "Pct",
+            "percentage",
+            "Percentage",
+          ];
+          for (const k of keys) {
+            if (k in v) return toNumPercent(v[k]);
+          }
+          return 0;
+        }
+        return toNumPercent(v);
+      }
+      function pickExplain(v) {
+        if (v && typeof v === "object") {
+          return String(v.explain ?? v.description ?? v.desc ?? "");
+        }
+        return "";
+      }
+      function normalizePairs(catObj) {
+        const entries = Object.entries(catObj).map(([k, v]) => [
+          k,
+          pickPercentField(v),
+          pickExplain(v),
+        ]);
+        const sum = entries.reduce(
+          (t, [, p]) => t + (Number.isFinite(p) ? p : 0),
+          0
+        );
+        return entries.map(([k, p, x]) => [
+          k,
+          sum > 0 ? (p / sum) * 100 : 0,
+          x,
+        ]);
+      }
+
+      function allocateCents(totalCents, pairs) {
+        const raw = pairs.map(([k, p]) => [k, p, totalCents * (p / 100)]);
+        const floors = raw.map(([k, p, v]) => [k, p, Math.floor(v)]);
+        const rema = raw.map(([k, p, v], i) => [k, p, v - floors[i][2]]);
+        let used = floors.reduce((t, [, , c]) => t + c, 0);
+        let need = Math.round(raw.reduce((t, [, , v]) => t + v, 0)) - used;
+        rema.sort((a, b) => b[2] - a[2]);
+        const out = new Map(
+          floors.map(([k, p, c]) => [k, { percent: p, cents: c }])
+        );
+        for (let i = 0; i < rema.length && need > 0; i++, need--) {
+          const k = rema[i][0];
+          out.get(k).cents += 1;
+        }
+        return out;
+      }
+      function asSortedRows(map, explainMap) {
+        const rows = Array.from(map.entries()).map(([k, obj]) => ({
+          category: k,
+          percent: obj.percent,
+          cents: obj.cents,
+          explain: explainMap[k]?.explain || "",
+        }));
+        rows.sort((a, b) => b.percent - a.percent);
+        return rows;
+      }
+      function buildDeepLink(ward, amount) {
+        const url = new URL(location.href);
+        url.searchParams.set("ward", ward);
+        url.searchParams.set("amount", (amount / 100).toString());
+        const cmp = compareSel.value || "";
+        if (cmp) url.searchParams.set("compare", cmp);
+        else url.searchParams.delete("compare");
+        return url.toString();
+      }
+      // Use semicolons between addresses (works best with Outlook-style clients)
+      function buildMailtoEncoded(toList, ccList, subject, body) {
+        const SEP = "; ";
+        const to = toList.filter(Boolean).join(SEP);
+        const cc =
+          ccList && ccList.length
+            ? `&cc=${encodeURIComponent(ccList.filter(Boolean).join(SEP))}`
+            : "";
+        return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(
+          subject
+        )}${cc}&body=${encodeURIComponent(body)}`;
+      }
+
+      // ------------------ Rendering helpers ------------------
+      function renderTableBody(tbody, rows) {
+        tbody.innerHTML = "";
+        for (const r of rows) {
+          const tr = document.createElement("tr");
+
+          const tdCat = document.createElement("td");
+          tdCat.innerHTML = `<div><strong>${
+            r.category
+          }</strong></div><div class="category-explain">${
+            r.explain || ""
+          }</div>`;
+
+          const tdPct = document.createElement("td");
+          tdPct.className = "right";
+          tdPct.textContent = `${r.percent.toFixed(2)}%`;
+
+          const tdBar = document.createElement("td");
+          const bar = document.createElement("div");
+          bar.className = "bar";
+          const fill = document.createElement("span");
+          fill.style.width = `${r.percent.toFixed(6)}%`;
+          fill.style.background = colorFor(r.category);
+          bar.appendChild(fill);
+          tdBar.appendChild(bar);
+
+          const tdAmt = document.createElement("td");
+          tdAmt.className = "right";
+          tdAmt.textContent = fmtMoney(r.cents);
+
+          tr.append(tdCat, tdPct, tdBar, tdAmt);
+          tbody.appendChild(tr);
+        }
+      }
+      function buildCard(wardName, rows, totalCents) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+        <div class="compare-card-title">${wardName}</div>
+        <div class="table-wrap">
+          <table aria-label="Breakdown table for ${wardName}">
+            <thead>
+              <tr>
+                <th>Budget Category</th>
+                <th class="right">%</th>
+                <th style="width:35%">Allocation</th>
+                <th class="right">Amount (CAD)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+              <tr>
+                <td><strong>Total</strong></td>
+                <td class="right">100%</td>
+                <td></td>
+                <td class="right">${fmtMoney(totalCents)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>`;
+        const tbody = card.querySelector("tbody");
+        renderTableBody(tbody, rows);
+        return card;
+      }
+
+      // ------------------ Compute + Render ------------------
+      function compute() {
+        const ward = wardSel.value;
+        const compareWard = compareSel.value || "";
+        const amountCents = parseAmount(amtInput.value);
+
+        if (!WARD_DATA[ward]) {
+          showMsg("Choose a valid ward.", true);
+          out.classList.add("hidden");
+          return;
+        }
+        if (!amountCents) {
+          showMsg("Enter a valid bill amount (e.g., 2400).", true);
+          amtInput.classList.add("input-error");
+          amtInput.setAttribute("aria-invalid", "true");
+          amtInput.focus();
+          out.classList.add("hidden");
+          return;
+        } else {
+          amtInput.classList.remove("input-error");
+          amtInput.removeAttribute("aria-invalid");
+        }
+
+        const cats = WARD_DATA[ward];
+        const pairs = normalizePairs(cats);
+        const sumRaw = Object.entries(cats).reduce(
+          (t, [, v]) => t + pickPercentField(v),
+          0
+        );
+        if (Math.abs(sumRaw - 100) > 0.001) {
+          note.textContent = `Note: ${ward} percentages sum to ${sumRaw.toFixed(
+            2
+          )}%. Values have been normalized to 100%.`;
+          note.classList.remove("hidden");
+        } else note.classList.add("hidden");
+
+        const alloc = allocateCents(amountCents, pairs);
+        const rows = asSortedRows(alloc, cats);
+        const total = Array.from(alloc.values()).reduce(
+          (t, o) => t + o.cents,
+          0
+        );
+
+        // optional compare
+        let cmpRows = null,
+          cmpTotal = 0;
+        if (compareWard && WARD_DATA[compareWard]) {
+          const c2 = WARD_DATA[compareWard];
+          const p2 = normalizePairs(c2);
+          const a2 = allocateCents(amountCents, p2);
+          cmpRows = asSortedRows(a2, c2);
+          cmpTotal = Array.from(a2.values()).reduce((t, o) => t + o.cents, 0);
+        }
+
+        // contacts
+        const ctr = CONTACTS[ward] || {};
+        cName.textContent = ctr.name || "—";
+        cEmail.textContent = ctr.email || "—";
+        ccListEl.textContent = QUERY_CC.join("; ");
+
+        // UI: single vs compare
+        if (cmpRows) {
+          // compare cards
+          compareBanner.classList.remove("hidden");
+          compareBanner.textContent = `Comparing: ${ward} vs ${compareWard}`;
+          singleTitle.classList.add("hidden");
+          singleTitle.textContent = "";
+          singleWrap.classList.add("hidden");
+
+          compareWrap.classList.remove("hidden");
+          compareWrap.innerHTML = "";
+          compareWrap.appendChild(buildCard(ward, rows, total));
+          compareWrap.appendChild(buildCard(compareWard, cmpRows, cmpTotal));
+        } else {
+          compareBanner.classList.add("hidden");
+          compareBanner.textContent = "";
+          compareWrap.classList.add("hidden");
+          compareWrap.innerHTML = "";
+
+          singleTitle.textContent = ward;
+          singleTitle.classList.remove("hidden");
+
+          singleWrap.classList.remove("hidden");
+          // Short headers in single view
+          wardHeadPct.textContent = "%";
+          wardHeadBar.textContent = "Allocation";
+          wardHeadAmt.textContent = "Amount (CAD)";
+          renderTableBody(resultsBody, rows);
+          totalPct.textContent = "100%";
+          totalAmt.textContent = fmtMoney(total);
+        }
+
+        // tools & links
+        const link = buildDeepLink(ward, amountCents);
+        linkItem.href = link;
+        shareBtn.onclick = () => {
+          const u = encodeURIComponent(link);
+          window.open(
+            `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+            "fbshare",
+            "width=640,height=600"
+          );
+        };
+
+        const subject = `Question re 2026 plan — ${ward} property tax breakdown`;
+        const greeting = `Hello ${
+          ctr.name || "Councillor"
+        }, and Clinton Sharpe,`;
+        const lines = [
+          greeting,
+          "",
+          `My annual property tax bill for ${ward} is ${fmtMoney(
+            amountCents
+          )}.`,
+          "Could you please share the plan for 2026 — including priorities, any changes in allocations, and the public engagement timeline?",
+          "",
+          "I've attached an image or PDF of the breakdown for your reference.",
+          `Shareable link: ${link}`,
+          "",
+          "Thank you,",
+        ];
+        const body = lines.join("\n");
+
+        emailBtn.onclick = () => {
+          const to = [ctr.email || "", MAYOR.email].filter(Boolean);
+          const mailto = buildMailtoEncoded(to, QUERY_CC, subject, body);
+          try {
+            location.href = mailto;
+          } catch {
+            window.open(mailto, "_blank");
+          }
+        };
+
+        // persist for exports and defaults
+        lastMergedWard = rows;
+        lastTotalCents = total;
+        lastWardName = ward;
+        lastMergedCmp = cmpRows;
+        lastCmpName = compareWard;
+        lastCmpTotal = cmpTotal || 0;
+        localStorage.setItem("tax:lastWard", ward);
+        localStorage.setItem("tax:lastCompare", compareWard || "");
+        localStorage.setItem("tax:lastAmt", String(amountCents));
+
+        out.classList.remove("hidden");
+        showMsg("", false, true);
+        history.replaceState(null, "", link);
+      }
+
+      function computeWrapper() {
+        compute();
+        linkItem.href = buildDeepLink(
+          wardSel.value,
+          parseAmount(amtInput.value)
+        );
+      }
+
+      // ------------------ PNG (single-ward table) ------------------
+      function truncate(ctx, text, maxW) {
+        if (ctx.measureText(text).width <= maxW) return text;
+        let e = "…",
+          n = text.length;
+        while (n > 0 && ctx.measureText(text.slice(0, n) + e).width > maxW) n--;
+        return text.slice(0, n) + e;
+      }
+      async function generateTablePNG(ward, rows, totalCents) {
+        const pad = 24,
+          rowH = 40,
+          headH = 48,
+          footH = 54;
+        const colCat = 360,
+          colPct = 100,
+          colBar = 260,
+          colAmt = 160;
+        const innerW = colCat + colPct + colBar + colAmt;
+        const width = pad * 2 + innerW,
+          height = pad + headH + rows.length * rowH + footH + pad;
+        const scale = Math.min(window.devicePixelRatio || 2, 3);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const ctx = canvas.getContext("2d");
+        ctx.scale(scale, scale);
+        const mono = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
+        const sans =
+          "system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#f9fafb";
+        ctx.fillRect(pad, pad, innerW, headH);
+        ctx.fillStyle = "#111827";
+        ctx.font = "700 16px " + sans;
+
+        let x = pad,
+          y = pad + 30;
+        ctx.fillText("Budget Category", x + 4, y);
+        x += colCat;
+        ctx.fillText(
+          "% (" + ward + ")",
+          x + colPct - ctx.measureText("% (" + ward + ")").width - 8,
+          y
+        );
+        x += colPct;
+        ctx.fillText("Allocation (" + ward + ")", x + 8, y);
+        x += colBar;
+        ctx.fillText(
+          "Amount (CAD)",
+          x + colAmt - ctx.measureText("Amount (CAD)").width - 8,
+          y
+        );
+
+        let cy = pad + headH;
+        rows.forEach((r) => {
+          let cx = pad;
+          const yMid = cy + rowH / 2;
+          ctx.fillStyle = "#111827";
+          ctx.font = "600 14px " + sans;
+          ctx.fillText(truncate(ctx, r.category, colCat - 8), cx + 4, yMid - 4);
+          if (r.explain) {
+            ctx.fillStyle = "#6b7280";
+            ctx.font = "400 12px " + sans;
+            ctx.fillText(
+              truncate(ctx, r.explain, colCat - 8),
+              cx + 4,
+              yMid + 12
+            );
+          }
+          cx += colCat;
+
+          ctx.fillStyle = "#111827";
+          ctx.textAlign = "right";
+          ctx.font = "500 14px " + mono;
+          ctx.fillText(r.percent.toFixed(2) + "%", cx + colPct - 4, yMid + 5);
+          ctx.textAlign = "left";
+          cx += colPct;
+
+          ctx.fillStyle = "#e5e7eb";
+          ctx.fillRect(cx + 4, yMid - 6, colBar - 8, 12);
+          ctx.fillStyle = colorFor(r.category);
+          ctx.fillRect(
+            cx + 4,
+            yMid - 6,
+            Math.max(0, (colBar - 8) * (r.percent / 100)),
+            12
+          );
+          cx += colBar;
+
+          ctx.textAlign = "right";
+          ctx.font = "600 14px " + mono;
+          ctx.fillStyle = "#111827";
+          ctx.fillText(
+            new Intl.NumberFormat("en-CA", {
+              style: "currency",
+              currency: "CAD",
+            }).format(r.cents / 100),
+            cx + colAmt - 4,
+            yMid + 5
+          );
+          ctx.textAlign = "left";
+
+          ctx.strokeStyle = "#e5e7eb";
+          ctx.beginPath();
+          ctx.moveTo(pad, cy + rowH);
+          ctx.lineTo(pad + innerW, cy + rowH);
+          ctx.stroke();
+          cy += rowH;
+        });
+
+        ctx.fillStyle = "#111827";
+        ctx.font = "700 14px " + sans;
+        ctx.fillText("This is my Property Tax total", pad + 4, cy + 30);
+        ctx.textAlign = "right";
+        ctx.font = "700 14px " + mono;
+        ctx.fillText(
+          new Intl.NumberFormat("en-CA", {
+            style: "currency",
+            currency: "CAD",
+          }).format(totalCents / 100),
+          pad + innerW - 4,
+          cy + 30
+        );
+        ctx.strokeStyle = "#e5e7eb";
+        ctx.strokeRect(pad, pad, innerW, headH + rows.length * rowH + footH);
+        return new Promise((res) =>
+          canvas.toBlob((b) => res({ blob: b, canvas }), "image/png")
+        );
+      }
+      function downloadBlob(blob, filename) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
+
+      // ------------------ Events ------------------
+      function computeWrapper() {
+        compute();
+        linkItem.href = buildDeepLink(
+          wardSel.value,
+          parseAmount(amtInput.value)
+        );
+      }
+      calcBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        computeWrapper();
+      });
+      resetBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        amtInput.value = "";
+        out.classList.add("hidden");
+        showMsg("", false, true);
+        const url = new URL(location.href);
+        ["ward", "amount", "compare"].forEach((p) =>
+          url.searchParams.delete(p)
+        );
+        history.replaceState(null, "", url.toString());
+      });
+      amtInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          computeWrapper();
+        }
+      });
+      [wardSel, compareSel].forEach((sel) => {
+        sel.addEventListener("change", computeWrapper);
+        sel.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            computeWrapper();
+          }
+        });
+      });
+      amtInput.addEventListener("blur", formatAmountField);
+
+      // More… menu
+      moreBtn.addEventListener("click", () => {
+        const open = moreMenu.classList.toggle("show");
+        moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.addEventListener("click", (e) => {
+        if (!moreMenu.contains(e.target) && e.target !== moreBtn) {
+          moreMenu.classList.remove("show");
+          moreBtn.setAttribute("aria-expanded", "false");
+        }
       });
 
-      ctx.fillStyle='#111827'; ctx.font='700 14px '+sans; ctx.fillText('This is my Property Tax total', pad+4, cy+30);
-      ctx.textAlign='right'; ctx.font='700 14px '+mono; ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(totalCents/100), pad+innerW-4, cy+30);
-      if(hasCmp) ctx.fillText(new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format((cmpTotal||0)/100), pad+innerW-4-(160+260+100+160), cy+30);
+      // PNG + PDF actions from menu
+      pngItem.onclick = async () => {
+        if (!lastMergedWard) {
+          alert("Please calculate first.");
+          return;
+        }
+        try {
+          const { blob } = await generateTablePNG(
+            lastWardName,
+            lastMergedWard,
+            lastTotalCents
+          );
+          const base = `arcadia-tax-breakdown-${lastWardName
+            .replace(/\s+/g, "-")
+            .toLowerCase()}`;
+          const fname = `${base}.png`;
+          downloadBlob(blob, fname);
+          showToast("Image downloaded");
+        } catch {
+          showMsg("Could not generate image on this device.", true);
+        }
+      };
+      pdfItem.onclick = async () => {
+        if (!lastMergedWard) {
+          alert("Please calculate first.");
+          return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "portrait",
+          unit: "pt",
+          format: "a4",
+        });
+        const ward = lastWardName;
+        const amountCents = parseAmount(amtInput.value);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text("Arcadia Residential Property Tax Breakdown", 40, 50);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text(`Ward: ${ward}`, 40, 80);
+        doc.text(`Annual Property Tax Bill: ${fmtMoney(amountCents)}`, 40, 100);
+        let y = 140;
+        doc.setFont("helvetica", "bold");
+        doc.text("Category", 40, y);
+        doc.text("%", 250, y);
+        doc.text("Amount (CAD)", 350, y);
+        y += 20;
+        doc.setFont("helvetica", "normal");
+        lastMergedWard.forEach((r) => {
+          doc.text(r.category, 40, y);
+          doc.text(r.percent.toFixed(2) + "%", 250, y, { align: "right" });
+          doc.text(fmtMoney(r.cents), 430, y, { align: "right" });
+          if (r.explain) {
+            doc.setFontSize(9);
+            doc.text(r.explain, 60, y + 12);
+            doc.setFontSize(12);
+            y += 20;
+          }
+          y += 20;
+        });
+        y += 10;
+        doc.setFont("helvetica", "bold");
+        doc.text("This is my Property Tax total", 40, y);
+        doc.text(fmtMoney(lastTotalCents), 430, y, { align: "right" });
+        const fname = `arcadia-tax-breakdown-${ward
+          .replace(/\s+/g, "-")
+          .toLowerCase()}.pdf`;
+        doc.save(fname);
+      };
 
-      ctx.strokeStyle='#e5e7eb'; ctx.strokeRect(pad,pad,innerW,headH+(rows.length*rowH)+footH);
-      return new Promise(res=>canvas.toBlob(b=>res({blob:b,canvas}),'image/png'));
-    }
+      // ------------------ Load data ------------------
+      async function loadRates() {
+        try {
+          const res = await fetch("ward_rates_2025.json", {
+            cache: "no-store",
+          });
+          if (!res.ok) throw new Error("missing JSON");
+          WARD_DATA = await res.json();
 
-    function downloadBlob(blob, filename){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
+          const wards = Object.keys(WARD_DATA);
+          wardSel.innerHTML = "";
+          compareSel.innerHTML = "<option value=''>— no comparison —</option>";
+          wards.forEach((w) => {
+            const o = document.createElement("option");
+            o.textContent = w;
+            wardSel.appendChild(o);
+            const o2 = document.createElement("option");
+            o2.value = w;
+            o2.textContent = w;
+            compareSel.appendChild(o2);
+          });
 
-    pngBtn.onclick=async()=>{
-      if(!lastMergedWard){ alert("Please calculate first."); return; }
-      try{
-        const { blob } = await generateTablePNG(lastWardName, lastMergedWard, lastTotalCents, lastCmpName, lastMergedCmp, 0);
-        const base=`arcadia-tax-breakdown-${lastWardName.replace(/\s+/g,'-').toLowerCase()}`;
-        const fname= lastCmpName ? `${base}-vs-${lastCmpName.replace(/\s+/g,'-').toLowerCase()}.png` : `${base}.png`;
-        downloadBlob(blob, fname);
-        showMsg("Image downloaded. Attach it to your email before sending.", false);
-      }catch{ showMsg("Could not generate image on this device.", true); }
-    };
+          const url = new URL(location.href);
+          const qWard = url.searchParams.get("ward");
+          const qAmt = url.searchParams.get("amount");
+          const qCmp = url.searchParams.get("compare");
+          const lastWard = localStorage.getItem("tax:lastWard");
+          const lastAmt = localStorage.getItem("tax:lastAmt");
+          const lastCmp = localStorage.getItem("tax:lastCompare");
 
-    // PDF export
-    pdfBtn.onclick=async()=>{
-      if(!lastMergedWard){ alert("Please calculate first."); return; }
-      const { jsPDF } = window.jspdf; const doc=new jsPDF({orientation:'portrait', unit:'pt', format:'a4'});
-      const ward=lastWardName; const amountCents=parseAmount(amtInput.value);
-      doc.setFont('helvetica','bold'); doc.setFontSize(16);
-      doc.text("Arcadia Residential Property Tax Breakdown", 40, 50);
-      doc.setFont('helvetica','normal'); doc.setFontSize(12);
-      doc.text(`Ward: ${ward}`, 40, 80);
-      doc.text(`Annual Property Tax Bill: ${fmtMoney(amountCents)}`, 40, 100);
+          if (qWard && WARD_DATA[qWard]) wardSel.value = qWard;
+          else if (lastWard && WARD_DATA[lastWard]) wardSel.value = lastWard;
+          if (qCmp && WARD_DATA[qCmp]) compareSel.value = qCmp;
+          else if (lastCmp && WARD_DATA[lastCmp]) compareSel.value = lastCmp;
+          if (qAmt) {
+            amtInput.value = qAmt;
+          } else if (lastAmt) {
+            amtInput.value = (Number(lastAmt) / 100).toString();
+          }
 
-      let y=140;
-      doc.setFont('helvetica','bold'); doc.text("Category",40,y); doc.text("%",250,y); doc.text("Amount (CAD)",350,y);
-      y+=20; doc.setFont('helvetica','normal');
-      lastMergedWard.forEach(r=>{
-        doc.text(r.category,40,y);
-        doc.text(r.percent.toFixed(2)+"%",250,y,{align:'right'});
-        doc.text(fmtMoney(r.cents),430,y,{align:'right'});
-        if(r.explain){ doc.setFontSize(9); doc.text(r.explain,60,y+12); doc.setFontSize(12); y+=20; }
-        y+=20;
-      });
-      y+=10; doc.setFont('helvetica','bold'); doc.text("This is my Property Tax total",40,y);
-      doc.text(fmtMoney(lastTotalCents),430,y,{align:'right'});
-      const fname=`arcadia-tax-breakdown-${ward.replace(/\s+/g,'-').toLowerCase()}.pdf`; doc.save(fname);
-    };
+          if (qAmt || lastAmt) computeWrapper();
+        } catch (e) {
+          showMsg(
+            "Could not load ward_rates_2025.json. Ensure it sits next to index.html.",
+            true
+          );
+          console.error(e);
+        }
+      }
+      window.addEventListener("DOMContentLoaded", loadRates);
+    </script>
 
-    function computeWrapper(){ compute(); const link=buildDeepLink(wardSel.value, parseAmount(amtInput.value)); linkBtn.href=link; }
-  </script>
-</body>
+    <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
+  </body>
 </html>
